@@ -18,6 +18,8 @@ cnode_port = "3001"                 # insert your port number
 cnode_valency = "1"
 max_peers = "15"
 custom_peers = "75.119.131.17:5002:1"
+destination_topology_file = "mainnet-topology.json"
+logfile = "logs/topologyUpdater_lastresult.json"
 mainnet_nwmagic = "764824073"
 
 # ------ nothing to chage below this line ----------------
@@ -26,9 +28,13 @@ def getpeers(current_peers):
     peers_list = custom_peers.split(',')
     for element in peers_list:
         peer = element.split(':')
-        new_peer = '{ "addr" : "' + peer[0] + '",  "port" : "' + peer[1] + '", "valency" : "' + peer[2] + '" }'
-        new_peer_json = json.loads(new_peer)
-        current_peers['Producers'].append(new_peer_json)
+        if len(peer) == 3:
+            new_peer = '{ "addr" : "' + peer[0] + '",  "port" : "' + peer[1] + '", "valency" : "' + peer[2] + '" }'
+            new_peer_json = json.loads(new_peer)
+            current_peers['Producers'].append(new_peer_json)
+        else:
+            print("custom peer: " + element + " has wrong format")
+            sys.exit()
     return current_peers;
 
 def requestmetric(url):
@@ -52,16 +58,7 @@ def requestmetric(url):
 
 # main
 
-topology_file = open("topology.json", "rt")
-all_peers = topology_file.read()
-topology_file.close()
-
-all_peers_json = json.loads(all_peers)
-my_new_peers = getpeers(all_peers_json)
-#print(all_peers_json)
-print(json.dumps(my_new_peers, indent=4))
-sys.exit()
-
+# first get last block number
 response = requestmetric('http://localhost:12798/metrics')
 
 response_list = response.text.splitlines(True)
@@ -71,30 +68,37 @@ for element in response_list:
     metrics[metric[0]] = metric[1]
 
 block_number = metrics['cardano_node_metrics_blockNum_int']
-print(block_number)
 
 # now register with central
 
 url = "https://api.clio.one/htopology/v1/?port=" + cnode_port + "&blockNo=" + block_number + "&valency=" + cnode_valency 
 url = url + "&magic=" + mainnet_nwmagic + "&" + cnode_hostname 
 
-print(url)
 response = requests.get(url)
 print(response.text)
+log = open(logfile, "a")
+n = log.write(response.text)
+log.close()
+
+# check resultcode
+
+#parsed_response = json.loads(response.text)
+#if (parsed_response['resultcode'] != '204'):
+#    print("got resultcode = " + parsed_response['resultcode'])
 
 url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + mainnet_nwmagic
-print(url)
 response = requests.get(url)
 parsed_response = json.loads(response.text)
+if (parsed_response['resultcode'] != '201'):
+    print("got wrong resultcode = " + parse_dresponse['resultcode'])
+    sys.exit()
 
 # now we have to add custom peers
 
+my_new_peers = getpeers(parsed_response)
 
 # write topology to file
 
-topology_file = open("topology.json", "wt")
-n = topology_file.write(json.dumps(parsed_response, indent=4))
+topology_file = open(destination_topology_file, "wt")
+n = topology_file.write(json.dumps(my_new_peers, indent=4))
 topology_file.close()
-
-
-
