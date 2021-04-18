@@ -1,0 +1,16 @@
+{
+    "hostname": "RELAY",
+    "port": "3001",
+    "valency": "1",
+    "maxPeers": "15",
+    "networkMagic": "764824073",
+    "destinationTopologyFile": "topology.json",
+    "logfile": "logs/topologyUpdater_lastresult.json",
+    "customPeers": [
+        {
+            "addr": "BLOCK PRODUCER",
+            "port": 6000,
+            "valency": 1
+        }
+    ]
+}
