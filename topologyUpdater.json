@@ -9,8 +9,8 @@
     "customPeers": [
         {
             "addr": "BLOCK PRODUCER",
-            "port": 6000,
-            "valency": 1
+            "port": "6000",
+            "valency": "1"
         }
     ]
 }
