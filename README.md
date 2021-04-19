@@ -9,4 +9,4 @@ There's no env file and no automatic update of the script itself. Next step is e
 
 Future updates will include sending emails for the purpose of monitoring the updates.
 
-If you like the tools - then please support us and stake with ATAAT.
+If you like the tools provided here - then please support us and stake with ATAAT.
