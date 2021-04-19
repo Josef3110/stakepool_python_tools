@@ -2,8 +2,10 @@
     "hostname": "RELAY",
     "port": "3001",
     "valency": "1",
+    "ipVersion: "4",
     "maxPeers": "15",
     "networkMagic": "764824073",
+    "metricsURL": "http://localhost:12798/metrics"
     "destinationTopologyFile": "topology.json",
     "logfile": "logs/topologyUpdater_lastresult.json",
     "customPeers": [
@@ -12,5 +14,14 @@
             "port": 6000,
             "valency": 1
         }
+    ],
+    "email": [
+    	{
+	   "smtpServer" : "localhost",
+	   "smtpPort" : 25,
+	   "msgTo": "admin",
+	   "msgFrom": "monitoring",
+	   "msgSubject": "Monitoring Alert!"
+	}
     ]
 }
