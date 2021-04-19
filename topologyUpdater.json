@@ -3,6 +3,7 @@
     "port": "3001",
     "valency": "1",
     "maxPeers": "15",
+    "ipVersion": "4",
     "networkMagic": "764824073",
     "metricsURL": "http://localhost:12798/metrics"
     "destinationTopologyFile": "topology.json",
