@@ -13,8 +13,10 @@ from datetime import datetime
 # define some constants upfront
 
 cnode_valency_default = "1"
+ipVersion_default = "4"             # other possible values are "6" or "mix"
 max_peers_default = "15"
 nwmagic_default = "764824073"       # network magic for mainnet - if you want a testnet then change the value in config file instead
+metricsURL_default = "http://localhost:12798/metrics"
 
 def timestamp4log():
     return datetime.now().strftime("%d.%m.%Y %H:%M:%S");
@@ -62,7 +64,7 @@ args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
 if args.version:
-    print(myname + " version 0.5")
+    print(myname + " version 0.6")
     sys.exit()
 
 if not args.push and not args.fetch:
@@ -86,10 +88,18 @@ if args.config:
         cnode_valency = my_config['valency']
     else:
         cnode_valency = cnode_valency_default
+    if 'ipVersion' in my_config:
+        ipVersion = my_config['ipVersion']
+    else:
+        ipVersion = ipVersion_default
     if 'maxPeers' in my_config:
         max_peers = my_config['maxPeers']
     else:
         max_peers = max_peers_default
+    if 'metricsURL' in my_config:
+        metricsURL = my_config['metricsURL']
+    else:
+        metricsURL = metricsURL_default
     if 'destinationTopologyFile' in my_config:
         destination_topology_file = my_config['destinationTopologyFile']
     else:
@@ -107,7 +117,7 @@ if args.config:
 
 if args.push or do_both:
     # first get last block number
-    response = requestmetric('http://localhost:12798/metrics')
+    response = requestmetric(metricsURL)
 
     response_list = response.text.splitlines(True)
     metrics = {}
@@ -135,7 +145,7 @@ if args.push or do_both:
     #    print("got resultcode = " + parsed_response['resultcode'])
 
 if args.fetch or do_both:
-    url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic + "&ipv=4"
+    url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic + "&ipv=" + ipVersion
     response = requests.get(url)
     parsed_response = json.loads(response.text)
     if (parsed_response['resultcode'] != '201'):
