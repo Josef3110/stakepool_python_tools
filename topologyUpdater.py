@@ -3,39 +3,23 @@
 # topologyUpdater as python variant
 
 import sys
+import argparse
 import requests
 import json
 import time
 from datetime import datetime
 
 # define some constants upfront
-# TODO: try to get ip address from the system or some configuration file
 
-# for the moment configuration is pretty much like the shell script by changing values beloq
-
-cnode_hostname = "the hostname"     # insert your hostname or ip address
-cnode_port = "3001"                 # insert your port number
 cnode_valency = "1"
 max_peers = "15"
-custom_peers = "75.119.131.17:5002:1"
-destination_topology_file = "mainnet-topology.json"
-logfile = "logs/topologyUpdater_lastresult.json"
-mainnet_nwmagic = "764824073"
+nwmagic = "764824073"       # network magic for mainnet - if you want a testnet then change the value in config file instead
 
-# ------ nothing to chage below this line ----------------
-
-def getpeers(current_peers):
-    peers_list = custom_peers.split(',')
-    for element in peers_list:
-        peer = element.split(':')
-        if len(peer) == 3:
-            new_peer = '{ "addr" : "' + peer[0] + '",  "port" : "' + peer[1] + '", "valency" : "' + peer[2] + '" }'
-            new_peer_json = json.loads(new_peer)
-            current_peers['Producers'].append(new_peer_json)
-        else:
-            print("custom peer: " + element + " has wrong format")
-            sys.exit()
-    return current_peers;
+def getconfig(configfile):
+    with open(configfile) as f:
+        data = json.load(f)
+        f.close()
+    return data;
 
 def requestmetric(url):
     try:
@@ -58,47 +42,72 @@ def requestmetric(url):
 
 # main
 
-# first get last block number
-response = requestmetric('http://localhost:12798/metrics')
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--fetch", help="only fetch of a fresh topology file", action="store_true")
+parser.add_argument("-p", "--push", help="only node alive push to Topology Updater API", action="store_true")
+parser.add_argument("-v", "--version", help="displays version and exits", action="store_true")
+parser.add_argument("-c", "--config", help="path to config file in json format", default="topologyUpdater.json")
 
-response_list = response.text.splitlines(True)
-metrics = {}
-for element in response_list:
-    metric = element.rstrip('\n').split()
-    metrics[metric[0]] = metric[1]
+args = parser.parse_args()
 
-block_number = metrics['cardano_node_metrics_blockNum_int']
-
-# now register with central
-
-url = "https://api.clio.one/htopology/v1/?port=" + cnode_port + "&blockNo=" + block_number + "&valency=" + cnode_valency 
-url = url + "&magic=" + mainnet_nwmagic + "&" + cnode_hostname 
-
-response = requests.get(url)
-print(response.text)
-log = open(logfile, "a")
-n = log.write(response.text)
-log.close()
-
-# check resultcode
-
-#parsed_response = json.loads(response.text)
-#if (parsed_response['resultcode'] != '204'):
-#    print("got resultcode = " + parsed_response['resultcode'])
-
-url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + mainnet_nwmagic
-response = requests.get(url)
-parsed_response = json.loads(response.text)
-if (parsed_response['resultcode'] != '201'):
-    print("got wrong resultcode = " + parse_dresponse['resultcode'])
+if args.version:
+    print("topologyUpdater.py version 0.3")
     sys.exit()
 
-# now we have to add custom peers
+if args.config:
+    my_config = getconfig(args.config)
+    cnode_hostname = my_config['hostname']
+    cnode_port = my_config['port']
+    cnode_valency = my_config['valency']
+    max_peers = my_config['maxPeers']
+    destination_topology_file = my_config['destinationTopologyFile']
+    logfile = my_config['logfile']
+    nwmagic = my_config['networkMagic']
 
-my_new_peers = getpeers(parsed_response)
+if args.push:
+    # first get last block number
+    response = requestmetric('http://localhost:12798/metrics')
 
-# write topology to file
+    response_list = response.text.splitlines(True)
+    metrics = {}
+    for element in response_list:
+        metric = element.rstrip('\n').split()
+        metrics[metric[0]] = metric[1]
 
-topology_file = open(destination_topology_file, "wt")
-n = topology_file.write(json.dumps(my_new_peers, indent=4))
-topology_file.close()
+    block_number = metrics['cardano_node_metrics_blockNum_int']
+
+    # now register with central
+
+    url = "https://api.clio.one/htopology/v1/?port=" + cnode_port + "&blockNo=" + block_number + "&valency=" + cnode_valency 
+    url = url + "&magic=" + nwmagic + "&" + cnode_hostname 
+
+    response = requests.get(url)
+    print(response.text)
+    log = open(logfile, "a")
+    n = log.write(response.text)
+    log.close()
+
+    # check resultcode
+
+    #parsed_response = json.loads(response.text)
+    #if (parsed_response['resultcode'] != '204'):
+    #    print("got resultcode = " + parsed_response['resultcode'])
+
+if args.fetch:
+    url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic
+    response = requests.get(url)
+    parsed_response = json.loads(response.text)
+    if (parsed_response['resultcode'] != '201'):
+        print("got wrong resultcode = " + parsed_response['resultcode'])
+        sys.exit()
+
+    # now we have to add custom peers
+
+    for peer in my_config['customPeers']:
+        parsed_response['Producers'].append(peer)
+
+    # write topology to file
+
+    topology_file = open(destination_topology_file, "wt")
+    n = topology_file.write(json.dumps(parsed_response, indent=4))
+    topology_file.close()
