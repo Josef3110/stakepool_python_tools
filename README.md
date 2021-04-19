@@ -6,3 +6,5 @@ As a starter an alternative to topologyUpdater.sh is provided. It does not have 
 Don't use the JSON configuration file yet. It will be integrated later. For the first release you'll have to edit parameters directly into the Python source file. There's no env configuration file needed - in opposition to the shell script.
 
 Future updates will include sending emails for the purpose of monitoring the updates.
+
+If you like the tools - then please support us and stake with ATAAT.
