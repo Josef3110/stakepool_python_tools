@@ -29,7 +29,6 @@ sys.excepthook = exception_handler
 def getconfig(configfile):
     with open(configfile) as f:
         data = json.load(f)
-    f.close()
     return data;
 
 def requestmetric(url):
@@ -63,7 +62,7 @@ args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
 if args.version:
-    print(myname + " version 0.4")
+    print(myname + " version 0.5")
     sys.exit()
 
 if not args.push and not args.fetch:
@@ -121,7 +120,7 @@ if args.push or do_both:
     # now register with central
 
     url = "https://api.clio.one/htopology/v1/?port=" + cnode_port + "&blockNo=" + block_number + "&valency=" + cnode_valency 
-    url = url + "&magic=" + nwmagic + "&" + cnode_hostname 
+    url = url + "&magic=" + nwmagic + "&hostname=" + cnode_hostname 
 
     response = requests.get(url)
     print(response.text)
@@ -136,7 +135,7 @@ if args.push or do_both:
     #    print("got resultcode = " + parsed_response['resultcode'])
 
 if args.fetch or do_both:
-    url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic
+    url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic + "&ipv=4"
     response = requests.get(url)
     parsed_response = json.loads(response.text)
     if (parsed_response['resultcode'] != '201'):
