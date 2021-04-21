@@ -20,13 +20,12 @@
             "valency": 1
         }
     ],
-    "email": [
+    "email": 
     	{
 	   "smtpServer" : "localhost",
 	   "smtpPort" : 25,
-	   "msgTo": "admin",
-	   "msgFrom": "monitoring",
+	   "msgTo": "admin@example.com",
+	   "msgFrom": "monitoring@someserver.com",
 	   "msgSubject": "Monitoring Alert!"
 	}
-    ]
 }
