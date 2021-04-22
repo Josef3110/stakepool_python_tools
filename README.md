@@ -9,4 +9,4 @@ A working smtp server is necessary in order for emails to arrive at the destinat
 
 There's no env file and no automatic update of the script itself. The script works as it is with no guarantees whatsoever. Please, use it with care!
 
-If you like the tools provided here - then please support us and stake with ATAAT.
+If you like the tools provided here - then please support us and stake with ADAAT.
