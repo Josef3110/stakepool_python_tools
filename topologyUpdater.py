@@ -8,9 +8,16 @@ import argparse
 import requests
 import json
 import time
+import smtplib
+import email.utils
+from email.mime.text import MIMEText
+import socket
+import requests.packages.urllib3.util.connection as urllib3_cn
 from datetime import datetime
 
-# define some constants upfront
+version = "0.7"
+
+# define some default values upfront
 
 cnode_valency_default = "1"
 ipVersion_default = "4"             # other possible values are "6" or "mix"
@@ -21,12 +28,31 @@ metricsURL_default = "http://localhost:12798/metrics"
 def timestamp4log():
     return datetime.now().strftime("%d.%m.%Y %H:%M:%S");
 
+def sendmail(email_config,message):
+    ts_message = os.path.basename(sys.argv[0]) + "@" + timestamp4log() + ": " + message
+    if not bool(email_config):
+        print(ts_message)
+    else:
+        msg = MIMEText(ts_message)
+        msg['To'] = email.utils.formataddr(('Admin', email_config['msgTo']))
+        msg['From'] = email.utils.formataddr(('Monitoring', email_config['msgFrom']))
+        msg['Subject'] = email_config['msgSubject']
+        server = smtplib.SMTP(email_config['smtpServer'], email_config['smtpPort'])
+        #server.set_debuglevel(True) # show communication with the server
+        try:
+            server.sendmail(email_config['msgFrom'], [email_config['msgTo']], msg.as_string())
+        finally:
+            server.quit()
+    return;
+
 def exception_handler(exception_type, exception, traceback):
     # All your trace are belong to us!
     # your format
-    print(os.path.basename(sys.argv[0]) + "@" + timestamp4log() + ": " + exception_type.__name__, exception)
+    sendmail(ec, exception_type.__name__ + ", " + str(exception))
 
-sys.excepthook = exception_handler
+def allowed_gai_family() -> socket.AddressFamily:
+    family = socket.AF_INET
+    return family;
 
 def getconfig(configfile):
     with open(configfile) as f:
@@ -38,21 +64,26 @@ def requestmetric(url):
         response = requests.get(url)
         response.raise_for_status()
     except requests.exceptions.HTTPError as errh:
-        print(timestamp4log() + ": Http Error: " + repr(errh))
+        sendmail(ec, "Http Error: " + repr(errh))
         sys.exit()
     except requests.exceptions.ConnectionError as errc:
-        print(timestamp4log() + ": Error Connecting: " + repr(errc))
+        sendmail(ec,+ "Error Connecting: " + repr(errc))
         sys.exit()
     except requests.exceptions.Timeout as errt:
-        print(timestamp4log() + ": Timeout Error: " + repr(errt))
+        sendmail(ec, + "Timeout Error: " + repr(errt))
         sys.exit()
     except requests.exceptions.RequestException as err:
-        print(timestamp4log() + ": OOps: Something Else " + repr(err))
+        sendmail(ec, + "OOps: Something Else " + repr(err))
         sys.exit()
     finally:
         return response;
 
 # main
+
+ec = {}
+sys.excepthook = exception_handler
+
+# start with parsing arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fetch", help="only fetch of a fresh topology file", action="store_true")
@@ -64,7 +95,7 @@ args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
 if args.version:
-    print(myname + " version 0.6")
+    print(myname + " version " + version)
     sys.exit()
 
 if not args.push and not args.fetch:
@@ -74,15 +105,17 @@ else:
 
 if args.config:
     my_config = getconfig(args.config)
+    if 'email' in my_config:
+       ec = my_config['email'] 
     if 'hostname' in my_config:
         cnode_hostname = my_config['hostname']
     else:
-        print(myname + "@" + timestamp4log() + ": relay hostname parameter is missing in configuration")
+        sendmail(ec,"relay hostname parameter is missing in configuration")
         sys.exit()
     if 'port' in my_config:
         cnode_port = my_config['port']
     else:
-        print(myname + "@" + timestamp4log() + ": relay port parameter is missing in configuration")
+        sendmail(ec,"relay port parameter is missing in configuration")
         sys.exit()
     if 'valency' in my_config:
         cnode_valency = my_config['valency']
@@ -103,17 +136,22 @@ if args.config:
     if 'destinationTopologyFile' in my_config:
         destination_topology_file = my_config['destinationTopologyFile']
     else:
-        print(myname + "@" + timestamp4log() + ": destination for topology file is missing in configuration")
+        sendmail(ec,"destination for topology file is missing in configuration")
         sys.exit()
     if 'logfile' in my_config:
         logfile = my_config['logfile']
     else:
-        print(myname + "@" + timestamp4log() + ": path for logfile is missing in configuration")
+        sendmail(ec,"path for logfile is missing in configuration")
         sys.exit()
     if 'networkMagic' in my_config:
         nwmagic = my_config['networkMagic']
     else:
         nwmagic = nwmagic_default
+
+# force to use ipv4 for version 4 configuration
+
+if ipVersion == "4":
+    urllib3_cn.allowed_gai_family = allowed_gai_family
 
 if args.push or do_both:
     # first get last block number
@@ -140,16 +178,16 @@ if args.push or do_both:
 
     # check resultcode
 
-    #parsed_response = json.loads(response.text)
-    #if (parsed_response['resultcode'] != '204'):
-    #    print("got resultcode = " + parsed_response['resultcode'])
+    parsed_response = json.loads(response.text)
+    if (parsed_response['resultcode'] != '204'):
+        sendmail(ec, "got bad resultcode = " + parsed_response['resultcode'] + " for push command")
 
 if args.fetch or do_both:
     url = "https://api.clio.one/htopology/v1/fetch/?max=" + max_peers + "&magic=" + nwmagic + "&ipv=" + ipVersion
     response = requests.get(url)
     parsed_response = json.loads(response.text)
     if (parsed_response['resultcode'] != '201'):
-        print(myname + "@" + timestamp4log() + ": got wrong resultcode = " + parsed_response['resultcode'])
+        sendmail(ec, "got bad resultcode = " + parsed_response['resultcode'] + " for fetch command")
         sys.exit()
 
     # now we have to add custom peers
