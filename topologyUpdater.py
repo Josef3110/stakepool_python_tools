@@ -15,7 +15,7 @@ import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
 from datetime import datetime
 
-version = "0.7"
+version = "0.8"
 
 # define some default values upfront
 
@@ -178,8 +178,9 @@ if args.push or do_both:
 
     # check resultcode
 
+    ok_responses = [ '201', '203', '204' ]
     parsed_response = json.loads(response.text)
-    if (parsed_response['resultcode'] != '204'):
+    if (parsed_response['resultcode'] not in ok_responses):        # add 201 and 203 because those are starting codes
         sendmail(ec, "got bad resultcode = " + parsed_response['resultcode'] + " for push command")
 
 if args.fetch or do_both:
