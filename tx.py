@@ -33,9 +33,9 @@ def do_query(what,parameter,magic,debug):
 def do_transaction_raw(tx_in,src,dest,slot,fee,debug):
     command = ["cardano-cli", "transaction", "build-raw"] + tx_in
     command.append("--tx-out")
-    command.append(src + "+0")
+    command.append(src)
     command.append("--tx-out")
-    command.append(dest + "+0")
+    command.append(dest)
     command.append("--invalid-hereafter")
     command.append(slot)
     command.append("--fee")
@@ -117,7 +117,7 @@ current_slot = int(tip['slot'])
 
 all_utxo = do_query("utxo",src,magic,print_debug).splitlines()
 skip_header = 0
-src_amount = 0
+balance = 0
 tx_in = ""
 tx_count = 0
 
@@ -127,15 +127,15 @@ for utxo in all_utxo:
         skip_header = skip_header + 1
     else:
         col = re.split(r'\s+',utxo)
-        src_amount = src_amount + int(col[2])
+        balance = balance + int(col[2])
         tx_in.append("--tx-in")
         tx_in.append(col[0] + "#" + col[1])
         tx_count = tx_count + 1
 
-ignore = do_transaction_raw(tx_in,src,dest,str(current_slot + 10000),"0",print_debug)
+ignore = do_transaction_raw(tx_in,src + "+0",dest + "+0",str(current_slot + 10000),"0",print_debug)
 get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
 fee = int(get_tx_fee.split(" ")[0])
-tx_out = src_amount - fee - amount
+tx_out = balance - fee - amount
 
 # feedback what's in the transaction
 print("sending " + str(amount) + " lovelace and a fee of " + str(fee) + " lovelace")
@@ -146,4 +146,4 @@ if args.testnet_magic:
 else:
     print("on mainnet")
 
-ignore = do_transaction_raw(tx_in,src,dest,str(current_slot + 10000),str(fee),print_debug)
+ignore = do_transaction_raw(tx_in,src + "+" + str(tx_out),dest + "+" + str(amount),str(current_slot + 10000),str(fee),print_debug)
