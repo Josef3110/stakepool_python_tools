@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-version = "0.1"
+version = "0.2"
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -34,8 +34,8 @@ def do_query(what,parameter,magic,debug):
 
 # start with parsing arguments
 
-parser = argparse.ArgumentParser(description="query balance for a given wallet address")
-parser.add_argument("address", type=str, help="the wallet address")
+parser = argparse.ArgumentParser(description="query balance for a given address")
+parser.add_argument("address", type=str, help="the address")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + version)
@@ -73,8 +73,9 @@ for utxo in all_utxo:
         col = re.split(r'\s+',utxo)
         amount = amount + int(col[2])
 
-print("balance of " + address + " is " + str(float(amount)/1000000))
-if args.testnet_magic:
-    print("on testnet with magic = " + str(args.testnet_magic))
-else:
-    print("on mainnet")
+print("balance is " + str(float(amount)/1000000) + " ADA")
+if print_debug:
+    if args.testnet_magic:
+        print("on testnet with magic = " + str(args.testnet_magic))
+    else:
+        print("on mainnet")
