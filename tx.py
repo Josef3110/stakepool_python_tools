@@ -11,24 +11,23 @@ import json
 import time
 from datetime import datetime
 
-version = "0.2"
-
-def do_query(what,parameter):
+def do_query(what,parameter,magic):
     if (what == "tip"):
-        command = ["cardano-cli", "query", what, "--mainnet"]
+        command = ["cardano-cli", "query", what]
     if (what == "protocol-parameters"):
-        command = ["cardano-cli", "query", what, "--mainnet", "--out-file", "params.json"]
+        command = ["cardano-cli", "query", what, "--out-file", "params.json"]
     if (what == "utxo"):
         command = ["cardano-cli", "query", what, "--address"]
         command.append(parameter)
-        command.append("--mainnet")
+    command = command + magic
+#    print(command)
     p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     get_it = p.communicate()
-#    if (get_it[1] == ""):
-#        print(get_it[1])
-#        sys.exit()
-#    else:
-    return (get_it[0])
+    if (get_it[1] != ""):
+        print("ERROR: " + get_it[1])
+        sys.exit()
+    else:
+        return (get_it[0])
 
 def do_transaction_raw(tx_in,src,dest,slot,fee,out):
     command = ["cardano-cli", "transaction", "build-raw"] + tx_in
@@ -44,13 +43,13 @@ def do_transaction_raw(tx_in,src,dest,slot,fee,out):
     command.append(out)
     p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     get_it = p.communicate()
-#    if (get_it[1] == ""):
-#        print(get_it[1])
-#        sys.exit()
-#    else:
-    return (get_it[0])
+    if (get_it[1] != ""):
+        print("ERROR: " + get_it[1])
+        sys.exit()
+    else:
+        return (get_it[0])
 
-def do_calculate_fee(count):
+def do_calculate_fee(count,magic):
     command = ["cardano-cli", "transaction", "calculate-min-fee"]
     command.append("--tx-body-file")
     command.append("tx.tmp")
@@ -58,55 +57,65 @@ def do_calculate_fee(count):
     command.append(count)
     command.append("--tx-out-count")
     command.append("2")
-    command.append("--mainnet")
     command.append("--witness-count")
     command.append("1")
     command.append("--byron-witness-count")
     command.append("0") 
     command.append("--protocol-params-file")
     command.append("params.json")
+    command = command + magic
     p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     get_it = p.communicate()
-#    if (get_it[1] == ""):
-#        print(get_it[1])
-#        sys.exit()
-#    else:
-    return (get_it[0])
-
+    if (get_it[1] != ""):
+        print("ERROR: " + get_it[1])
+        sys.exit()
+    else:
+        return (get_it[0])
 
 # main
 
 # start with parsing arguments
 
-parser = argparse.ArgumentParser()
-parser.add_argument("amount", metavar = "amount", type=float, help="the amount of the transaction in ADA")
-parser.add_argument("src_address", metavar = "source", type=str, help="the source address")
-parser.add_argument("dest_address", metavar = "destination", type=str, help="the destination address")
-parser.add_argument("-v", "--version", help="displays version and exits", action="store_true")
+parser = argparse.ArgumentParser(description="build a transaction for signing with your keys")
+parser.add_argument("amount", metavar="amount", type=float, help="the amount of the transaction in ADA")
+parser.add_argument("src_address", metavar="source", type=str, help="the source address")
+parser.add_argument("dest_address", metavar="destination", type=str, help="the destination address")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
+parser.add_argument("-v", "--version", action="version", version='%(prog)s Version 0.3')
 args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
-if args.version:
-    print(myname + " version " + version)
-    sys.exit()
+if args.debug:
+    print("Debugging enabled")
+    debug = True
 
 amount = int(args.amount * 1000000)
 src = args.src_address
 dest = args.dest_address
 
-ignore = do_query("protocol-parameters","")
-tip = json.loads(do_query("tip",""))
+if args.testnet_magic:
+    magic = ["--testnet-magic", str(args.testnet_magic)]
+else:
+    magic = ["--mainnet"]
+
+ignore = do_query("protocol-parameters","",magic)
+tip = json.loads(do_query("tip","",magic))
 
 if float(tip['syncProgress']) < 100.0:
-    print("node not in sync, please wait until sync process has been finished")
+    print("ERROR: node not in sync, please wait until sync process has been finished")
     sys.exit()
 
 current_slot = int(tip['slot'])
 print("sending " + str(amount) + " lovelace")
 print("from " + src)
 print("to   " + dest)
+if args.testnet_magic:
+    print("on testnet with magic = " + str(args.testnet_magic))
+else:
+    print("on mainnet")
 
-all_utxo = do_query("utxo",src).splitlines()
+all_utxo = do_query("utxo",src,magic).splitlines()
 skip_header = 0
 src_amount = 0
 tx_in = ""
@@ -124,7 +133,7 @@ for utxo in all_utxo:
         tx_count = tx_count + 1
 
 ignore = do_transaction_raw(tx_in,src,dest,str(current_slot + 10000),"0","tx.tmp")
-get_tx_fee = do_calculate_fee(str(tx_count))
+get_tx_fee = do_calculate_fee(str(tx_count),magic)
 fee = int(get_tx_fee.split(" ")[0])
 print(fee)
 tx_out = src_amount - fee - amount
