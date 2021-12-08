@@ -8,10 +8,8 @@ import re
 import subprocess
 import argparse
 import json
-import time
-from datetime import datetime
 
-version = "0.4"
+version = "0.5"
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -116,13 +114,6 @@ if float(tip['syncProgress']) < 100.0:
     sys.exit()
 
 current_slot = int(tip['slot'])
-print("sending " + str(amount) + " lovelace")
-print("from " + src)
-print("to   " + dest)
-if args.testnet_magic:
-    print("on testnet with magic = " + str(args.testnet_magic))
-else:
-    print("on mainnet")
 
 all_utxo = do_query("utxo",src,magic,print_debug).splitlines()
 skip_header = 0
@@ -144,9 +135,15 @@ for utxo in all_utxo:
 ignore = do_transaction_raw(tx_in,src,dest,str(current_slot + 10000),"0",print_debug)
 get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
 fee = int(get_tx_fee.split(" ")[0])
-print(fee)
 tx_out = src_amount - fee - amount
-print(amount)
-print(tx_out)
+
+# feedback what's in the transaction
+print("sending " + str(amount) + " lovelace and a fee of " + str(fee) + " lovelace")
+print("from " + src)
+print("to   " + dest)
+if args.testnet_magic:
+    print("on testnet with magic = " + str(args.testnet_magic))
+else:
+    print("on mainnet")
 
 ignore = do_transaction_raw(tx_in,src,dest,str(current_slot + 10000),str(fee),print_debug)
