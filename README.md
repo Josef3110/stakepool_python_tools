@@ -13,7 +13,7 @@ Two additional tools, balance.py and tx.py, implement displaying of the balance 
 for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command to sign the 
 transaction is:
 
-...sh
+...shell
 cardano-cli transaction sign \
     --tx-body-file tx.draft \
     --signing-key-file payment.skey \
@@ -23,7 +23,7 @@ cardano-cli transaction sign \
 
 The command to submit the transaction is:
 
-...sh
+...shell
 cardano-cli transaction submit \
     --tx-file tx.signed \
     --mainnet
