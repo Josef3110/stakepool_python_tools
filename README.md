@@ -9,9 +9,49 @@ A working smtp server is necessary in order for emails to arrive at the destinat
 
 There's no env file and no automatic update of the script itself. The script works as it is with no guarantees whatsoever. Please, use it with care!
 
-Two additional tools, balance.py and tx.py, implement displaying of the balance of an address (not a complete wallet) and simple transactions. Tx.py is desinged 
-for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command to sign the 
-transaction is:
+Two additional tools, balance.py and tx.py, implement displaying of the balance of an address (not a complete wallet) and simple transactions. 
+
+This is the synopsis of balance.py:
+
+```
+usage: balance.py [-h] [-t [TESTNET_MAGIC]] [-d] [-v] address
+
+query balance for a given address
+
+positional arguments:
+  address               the address
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t [TESTNET_MAGIC], --testnet-magic [TESTNET_MAGIC]
+                        run on testnet with magic number
+  -d, --debug           prints debugging information
+  -v, --version         show program's version number and exit
+```
+
+and tx.py
+
+```
+usage: tx.py [-h] [-t [TESTNET_MAGIC]] [-d] [-v] amount source destination
+
+build a transaction for signing with your keys
+
+positional arguments:
+  amount                the amount of the transaction in ADA
+  source                the source address
+  destination           the destination address
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t [TESTNET_MAGIC], --testnet-magic [TESTNET_MAGIC]
+                        run on testnet with magic number
+  -d, --debug           prints debugging information
+  -v, --version         show program's version number and exit
+
+```
+
+Tx.py is desinged for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command
+to sign the transaction is:
 
 ```
 cardano-cli transaction sign \
