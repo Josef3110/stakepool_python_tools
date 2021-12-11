@@ -29,4 +29,6 @@ cardano-cli transaction submit \
     --mainnet
 ```
 
+If you have any questions then please [send me an email](mailto:askJoe@adapool.at).
+
 If you like the tools provided here - then please support us and stake with ADAAT.
