@@ -1,5 +1,5 @@
 # stakepool_python_tools
-some tools written in python to run cardano staking pools
+Some tools written in python to run cardano staking pools.
 
 As a starter, an alternative to topologyUpdater.sh is provided. It does exactly the same thing as the original, just with some simpler configuration options.
 
@@ -8,5 +8,21 @@ The current version supports the same command line options as the shell script. 
 A working smtp server is necessary in order for emails to arrive at the destination email.
 
 There's no env file and no automatic update of the script itself. The script works as it is with no guarantees whatsoever. Please, use it with care!
+
+Two additional tools, balance.py and tx.py, implement displaying of the balance of an address (not a complete wallet) and simple transactions. Tx.py is desinged 
+for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command to sign the 
+transaction is:
+
+cardano-cli transaction sign \
+    --tx-body-file tx.draft \
+    --signing-key-file payment.skey \
+    --mainnet \
+    --out-file tx.signed
+
+The command to submit the transaction is:
+
+cardano-cli transaction submit \
+    --tx-file tx.signed \
+    --mainnet
 
 If you like the tools provided here - then please support us and stake with ADAAT.
