@@ -1,0 +1,20 @@
+{
+    "nodeVKey":      "node.vkey",
+    "VRFVKey":       "vrf.vkey",
+    "poolPledge":    1000,
+    "poolCost":      345,
+    "poolMargin":    0.20,
+    "stakeVKey":     "stake.vkey",
+    "poolRelays": [
+    	{
+	   "name": "relaynode1.myadapoolnamerocks.com"
+	   "port": 6000
+	},
+	{
+	  "addr": "199.123.0.101"
+	  "port": 6001
+	}
+    ]
+    "metaDataURL":   "https://www.adapool.at/poolMetaData.json",
+    "metaDataHash":  "bdebe65449b23609490bc50eee367f6b27646f3bed93d1c795a1f7e558a462ac"
+}
