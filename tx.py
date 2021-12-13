@@ -9,7 +9,8 @@ import subprocess
 import argparse
 import json
 
-version = "0.5"
+version = "0.6"
+ada2lovelace = 1000000
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -97,7 +98,7 @@ if args.debug:
 else:
     print_debug = False
 
-amount = int(args.amount * 1000000)
+amount = int(args.amount * ada2lovelace)
 src = args.src_address
 dest = args.dest_address
 

@@ -9,7 +9,8 @@ import subprocess
 import argparse
 import json
 
-version = "0.2"
+version = "0.3"
+ada2lovelace = 1000000
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -73,7 +74,7 @@ for utxo in all_utxo:
         col = re.split(r'\s+',utxo)
         amount = amount + int(col[2])
 
-print("balance is " + str(float(amount)/1000000) + " ADA")
+print("balance is " + str(float(amount)/ada2lovelace) + " ADA")
 if print_debug:
     if args.testnet_magic:
         print("on testnet with magic = " + str(args.testnet_magic))
