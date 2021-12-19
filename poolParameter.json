@@ -7,14 +7,18 @@
     "stakeVKey":     "stake.vkey",
     "poolRelays": [
     	{
-	   "name": "relaynode1.myadapoolnamerocks.com",
+	   "name": "<Relay DNS name>",
 	   "port": 6000
 	},
 	{
-	  "addr": "199.123.0.101",
+	  "addr": "192.168.10.20",
 	  "port": 6001
+	},
+	{
+	  "addr": "fe80::250:56ff:fe41:a235",
+	  "port": 6002
 	}
     ],
-    "metaDataURL":   "https://www.adapool.at/poolMetaData.json",
-    "metaDataHash":  "bdebe65449b23609490bc50eee367f6b27646f3bed93d1c795a1f7e558a462ac"
+    "metaDataURL":   "<meta data URL>",
+    "metaDataHash":  "<meta data hash>"
 }
