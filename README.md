@@ -9,6 +9,8 @@ A working smtp server is necessary in order for emails to arrive at the destinat
 
 There's no env file and no automatic update of the script itself. The script works as it is with no guarantees whatsoever. Please, use it with care!
 
+# check balance and generate transactions
+
 Two additional tools, balance.py and tx.py, implement displaying of the balance of an address (not a complete wallet) and simple transactions. 
 
 This is the synopsis of balance.py:
@@ -70,6 +72,12 @@ cardano-cli transaction submit \
 ```
 
 These additional scripts use cardano-cli and therefore a complete node running in the background is required.
+
+# claim rewards and change parameters of your pool
+
+... tbd ...
+
+# support development
 
 If you have any questions then please [send me an email](mailto:askJoe@adapool.at).
 
