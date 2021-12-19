@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-version = "0.2"
+version = "0.3"
 ada2lovelace = 1000000
 
 def getconfig(configfile):
@@ -27,13 +27,20 @@ def do_pool_cert(config,magic,debug):
     command = command + '\t--pool-reward-account-verification-key-file ' + config['stakeVKey'] + ' \ \n'
     command = command + '\t--pool-owner-stake-verification-key-file ' + config['stakeVKey'] + ' \ \n'
     command = command + '\t' + magic + ' \ \n'
-    command = command + '\t--single-host-pool-relay <dns based relay, example ~ relaynode1.myadapoolnamerocks.com> \ \n'
-    command = command + '\t--pool-relay-port 6000 \ \n'
+    for relay in my_config['poolRelays']:
+        if 'name' in relay:
+            command = command + '\t--single-host-pool-relay ' + relay['name'] + ' \ \n'
+        if 'addr' in relay:
+            if '.' in relay['addr']:
+                command = command + '\t--pool-relay-ipv4 ' + relay['addr'] + ' \ \n'
+            if ':' in relay['addr']:
+                command = command + '\t--pool-relay-ipv6 ' + relay['addr'] + ' \ \n'
+        command = command + '\t--pool-relay-port ' + str(relay['port']) + ' \ \n'
     command = command + '\t--metadata-url ' + config['metaDataURL'] + ' \ \n'
     command = command + '\t--metadata-hash ' + config['metaDataHash'] + ' \ \n'
-    command = command + '\t--out-file pool.cert'
+    command = command + '\t--out-file pool.cert \ \n'
     if debug:
-        print(command)
+        print("DEBUG: " + command)
     return command
 
 def do_query(what,parameter,magic,debug):
@@ -131,9 +138,12 @@ else:
     magic_param = "--mainnet"
 
 if args.config and args.generate and not args.transaction:
-   my_config = getconfig(args.config)
-   do_pool_cert(my_config,magic_param,print_debug)
-   sys.exit()
+    my_config = getconfig(args.config)
+    command = do_pool_cert(my_config,magic_param,print_debug)
+    script_file = args.generate
+    with open(script_file, 'w') as shell_script:
+        shell_script.write(command)
+    os.chmod(script_file, 0o700)
 
 if args.transaction:
     payment_address = args.transaction
