@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-version = "0.3"
+version = "0.4"
 ada2lovelace = 1000000
 
 def getconfig(configfile):
@@ -62,16 +62,18 @@ def do_query(what,parameter,magic,debug):
     else:
         return (get_it[0])
 
-def do_transaction_raw(tx_in,src,dest,slot,fee,debug):
+def do_transaction_raw(tx_in,payment,slot,fee,debug):
     command = ["cardano-cli", "transaction", "build-raw"] + tx_in
     command.append("--tx-out")
-    command.append(src)
-    command.append("--tx-out")
-    command.append(dest)
+    command.append(payment)
     command.append("--invalid-hereafter")
     command.append(slot)
     command.append("--fee")
     command.append(fee)
+    command.append("--certificate-file")
+    command.append("pool.cert")
+    command.append("--certificate-file")
+    command.append("deleg.cert")
     command.append("--out-file")
     command.append("tx.draft")
     if debug:
@@ -91,9 +93,9 @@ def do_calculate_fee(count,magic,debug):
     command.append("--tx-in-count")
     command.append(count)
     command.append("--tx-out-count")
-    command.append("2")
-    command.append("--witness-count")
     command.append("1")
+    command.append("--witness-count")
+    command.append("3")
     command.append("--byron-witness-count")
     command.append("0") 
     command.append("--protocol-params-file")
@@ -137,6 +139,9 @@ else:
     magic = ["--mainnet"]
     magic_param = "--mainnet"
 
+# might want to check parameters for generating pool cert as well!
+ignore = do_query("protocol-parameters","",magic,print_debug)
+
 if args.config and args.generate and not args.transaction:
     my_config = getconfig(args.config)
     command = do_pool_cert(my_config,magic_param,print_debug)
@@ -147,9 +152,6 @@ if args.config and args.generate and not args.transaction:
 
 if args.transaction:
     payment_address = args.transaction
-    print(payment_address)
-    print(magic_param)
-    sys.exit()
     ignore = do_query("protocol-parameters","",magic,print_debug)
     tip = json.loads(do_query("tip","",magic,print_debug))
 
@@ -159,7 +161,7 @@ if args.transaction:
 
     current_slot = int(tip['slot'])
 
-    all_utxo = do_query("utxo",payment,magic,print_debug).splitlines()
+    all_utxo = do_query("utxo",payment_address,magic,print_debug).splitlines()
     skip_header = 0
     balance = 0
     tx_in = ""
@@ -176,18 +178,17 @@ if args.transaction:
             tx_in.append(col[0] + "#" + col[1])
             tx_count = tx_count + 1
 
-    ignore = do_transaction_raw(tx_in,src + "+0",dest + "+0",str(current_slot + 10000),"0",print_debug)
+    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(balance),str(current_slot + 10000),"0",print_debug)
     get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
     fee = int(get_tx_fee.split(" ")[0])
-    tx_out = balance - fee - amount
+    tx_out = balance - fee
 
 # feedback what's in the transaction
-#    print("sending " + str(amount) + " lovelace and a fee of " + str(fee) + " lovelace")
-#    print("from " + src)
-#    print("to   " + dest)
+    print("using " + payment_address + " with a fee of " + str(fee) + " lovelace")
+    print("to change pool parameters using pool.cert and deleg.cert")
     if args.testnet_magic:
         print("on testnet with magic = " + str(args.testnet_magic))
     else:
         print("on mainnet")
 
-    ignore = do_transaction_raw(tx_in,src + "+" + str(tx_out),dest + "+" + str(amount),str(current_slot + 10000),str(fee),print_debug)
+    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(tx_out),str(current_slot + 10000),str(fee),print_debug)
