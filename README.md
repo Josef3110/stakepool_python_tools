@@ -1,5 +1,5 @@
 # stakepool_python_tools
-Some tools written in python to run cardano staking pools.
+Some tools written in python to manage Cardano stake pools.
 
 ## topology updater
 
