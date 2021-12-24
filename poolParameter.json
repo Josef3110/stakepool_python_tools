@@ -3,7 +3,7 @@
     "VRFVKey":       "vrf.vkey",
     "poolPledge":    1000,
     "poolCost":      345,
-    "poolMargin":    0.20,
+    "poolMargin":    2,
     "stakeVKey":     "stake.vkey",
     "poolRelays": [
     	{
@@ -20,5 +20,7 @@
 	}
     ],
     "metaDataURL":   "<meta data URL>",
-    "metaDataHash":  "<meta data hash>"
+    "metaDataHash":  "<meta data hash>",
+    "poolCert": "pool.cert",
+    "delegCert": "deleg.cert"
 }
