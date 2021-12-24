@@ -9,8 +9,9 @@ import subprocess
 import argparse
 import json
 
-version = "0.4"
-ada2lovelace = 1000000
+VERSION = "0.5"
+ADA2LOVELACE = 1000000
+FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
 def getconfig(configfile):
     with open(configfile) as f:
@@ -21,9 +22,9 @@ def do_pool_cert(config,magic,debug):
     command = 'cardano-cli stake-pool registration-certificate \ \n'
     command = command + '\t--cold-verification-key-file ' + config['nodeVKey'] + ' \ \n'
     command = command + '\t--vrf-verification-key-file ' + config['VRFVKey']  + ' \ \n'
-    command = command + '\t--pool-pledge ' + str(config['poolPledge']*ada2lovelace) + ' \ \n'
-    command = command + '\t--pool-cost ' + str(config['poolCost']*ada2lovelace)+ ' \ \n'
-    command = command + '\t--pool-margin ' + str(config['poolMargin']) + ' \ \n'
+    command = command + '\t--pool-pledge ' + str(config['poolPledge']*ADA2LOVELACE) + ' \ \n'
+    command = command + '\t--pool-cost ' + str(config['poolCost']*ADA2LOVELACE)+ ' \ \n'
+    command = command + '\t--pool-margin ' + str(config['poolMargin']/100.0) + ' \ \n'
     command = command + '\t--pool-reward-account-verification-key-file ' + config['stakeVKey'] + ' \ \n'
     command = command + '\t--pool-owner-stake-verification-key-file ' + config['stakeVKey'] + ' \ \n'
     command = command + '\t' + magic + ' \ \n'
@@ -38,7 +39,7 @@ def do_pool_cert(config,magic,debug):
         command = command + '\t--pool-relay-port ' + str(relay['port']) + ' \ \n'
     command = command + '\t--metadata-url ' + config['metaDataURL'] + ' \ \n'
     command = command + '\t--metadata-hash ' + config['metaDataHash'] + ' \ \n'
-    command = command + '\t--out-file pool.cert \ \n'
+    command = command + '\t--out-file ' + config['poolCert'] + ' \ \n'
     if debug:
         print("DEBUG: " + command)
     return command
@@ -62,7 +63,7 @@ def do_query(what,parameter,magic,debug):
     else:
         return (get_it[0])
 
-def do_transaction_raw(tx_in,payment,slot,fee,debug):
+def do_transaction_raw(tx_in,payment,slot,fee,config,debug):
     command = ["cardano-cli", "transaction", "build-raw"] + tx_in
     command.append("--tx-out")
     command.append(payment)
@@ -71,9 +72,9 @@ def do_transaction_raw(tx_in,payment,slot,fee,debug):
     command.append("--fee")
     command.append(fee)
     command.append("--certificate-file")
-    command.append("pool.cert")
+    command.append(config['poolCert'])
     command.append("--certificate-file")
-    command.append("deleg.cert")
+    command.append(config['delegCert'])
     command.append("--out-file")
     command.append("tx.draft")
     if debug:
@@ -122,7 +123,7 @@ parser.add_argument("-g", "--generate", type=str, metavar="FILE", nargs='?', hel
 parser.add_argument("-c", "--config", type=str, nargs='?', help="path to config file in json format", default="poolParameter.json")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
-parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + version)
+parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
@@ -142,8 +143,9 @@ else:
 # might want to check parameters for generating pool cert as well!
 ignore = do_query("protocol-parameters","",magic,print_debug)
 
-if args.config and args.generate and not args.transaction:
-    my_config = getconfig(args.config)
+my_config = getconfig(args.config)
+
+if args.generate and not args.transaction:
     command = do_pool_cert(my_config,magic_param,print_debug)
     script_file = args.generate
     with open(script_file, 'w') as shell_script:
@@ -178,7 +180,7 @@ if args.transaction:
             tx_in.append(col[0] + "#" + col[1])
             tx_count = tx_count + 1
 
-    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(balance),str(current_slot + 10000),"0",print_debug)
+    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(balance),str(current_slot + 10000),"0",my_config,print_debug)
     get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
     fee = int(get_tx_fee.split(" ")[0])
     tx_out = balance - fee
@@ -191,4 +193,4 @@ if args.transaction:
     else:
         print("on mainnet")
 
-    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(tx_out),str(current_slot + 10000),str(fee),print_debug)
+    ignore = do_transaction_raw(tx_in,payment_address + "+" + str(tx_out),str(current_slot + 10000),str(fee),my_config,print_debug)
