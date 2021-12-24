@@ -75,7 +75,7 @@ cardano-cli transaction submit \
 
 These additional scripts use cardano-cli and therefore a complete node running in the background is required.
 
-## claim rewards and change parameters of your pool
+## claim rewards 
 
 Let's start with rewards.py:
 
@@ -95,12 +95,19 @@ optional arguments:
   -d, --debug           prints debugging information
   -v, --version         show program's version number and exit
 ```
+
+A simple example calling rewards.py would look like:
+
+```python
+rewards.py $(cat stake.addr) $(cat payment.addr)
+```
+
 rewards.py is desinged for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. 
 The command to sign the transaction is:
 
 ```shell
 cardano-cli transaction sign \
-    --tx-body-file tx.raw \
+    --tx-body-file tx.draft \
     --signing-key-file payment.skey \
     --signing-key-file stake.skey \
     --mainnet \
@@ -114,6 +121,7 @@ cardano-cli transaction submit \
     --tx-file tx.signed \
     --mainnet
 ```
+## change parameters of your pool
 
 ## support development
 
