@@ -54,7 +54,7 @@ optional arguments:
 
 ```
 
-Tx.py is desinged for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command
+tx.py is desinged for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. The command
 to sign the transaction is:
 
 ```
@@ -77,7 +77,43 @@ These additional scripts use cardano-cli and therefore a complete node running i
 
 ## claim rewards and change parameters of your pool
 
-... tbd ...
+Let's start with rewards.py:
+
+```
+usage: rewards.py [-h] [-t [TESTNET_MAGIC]] [-d] [-v] stake_address dest_address
+
+build a transaction for signing with your keys
+
+positional arguments:
+  stake_address         the stake address
+  dest_address          the destination address
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t [TESTNET_MAGIC], --testnet-magic [TESTNET_MAGIC]
+                        run on testnet with magic number
+  -d, --debug           prints debugging information
+  -v, --version         show program's version number and exit
+```
+rewards.py is desinged for pool operators and creates a tx.draft file. I.e., the transation must be signed (ideally on an air gapped system) and submitted. 
+The command to sign the transaction is:
+
+```shell
+cardano-cli transaction sign \
+    --tx-body-file tx.raw \
+    --signing-key-file payment.skey \
+    --signing-key-file stake.skey \
+    --mainnet \
+    --out-file tx.signed
+```
+
+The command to submit the transaction is:
+
+```shell
+cardano-cli transaction submit \
+    --tx-file tx.signed \
+    --mainnet
+```
 
 ## support development
 
