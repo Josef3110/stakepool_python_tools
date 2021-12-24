@@ -148,7 +148,10 @@ Managing pool parameters require multiple steps. First you need a configuration 
 	}
     ],
     "metaDataURL":   "<meta data URL>",   # the URL to your pools meta data information
-    "metaDataHash":  "<meta data hash>"   # the hash code generated for your meta data
+    "metaDataHash":  "<meta data hash>".  # the hash code generated for your meta data
+    "poolCert": "pool.cert",		  # the path for the pool.cert
+    "delegCert": "deleg.cert"		  # the path for the deleg.cert
+
 }
 
 ```
@@ -184,8 +187,8 @@ cardano-cli transaction submit \
     --tx-file tx.signed \
     --mainnet
 ```
-That's it. Your new setup is online. Please note that you'll also have to have your deleg.cert togehter with pool.cert in the same directory and with the same 
-file names in the directory when generating the transaction.
+That's it. Your new setup is online. Please note that you'll also have to have your delegation certificate together with your pool certificate in the given
+directory when generating the transaction.
 
 
 ## support development
