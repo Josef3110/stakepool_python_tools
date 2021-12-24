@@ -9,7 +9,9 @@ import subprocess
 import argparse
 import json
 
-version = "0.2"
+VERSION = "0.3"
+ADA2LOVELACE = 1000000
+FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -89,7 +91,7 @@ parser.add_argument("stake_address", type=str, help="the stake address")
 parser.add_argument("dest_address",  type=str, help="the destination address")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
-parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + version)
+parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
@@ -128,21 +130,18 @@ if reward_balance == 0:
     sys.exit()
 
 all_utxo = do_query("utxo",dest,magic,print_debug).splitlines()
-skip_header = 0
 balance = 0
 tx_in = ""
 tx_count = 0
-
 tx_in = []
-for utxo in all_utxo:
-    if (skip_header < 2):
-        skip_header = skip_header + 1
-    else:
-        col = re.split(r'\s+',utxo)
-        balance = balance + int(col[2])
-        tx_in.append("--tx-in")
-        tx_in.append(col[0] + "#" + col[1])
-        tx_count = tx_count + 1
+
+while balance < FEE_THRESHOLD:           # add tx_in until amount is available to save fees
+    utxo = all_utxo[tx_count+2]
+    col = re.split(r'\s+',utxo)
+    balance = balance + int(col[2])
+    tx_in.append("--tx-in")
+    tx_in.append(col[0] + "#" + col[1])
+    tx_count = tx_count + 1
 
 withdrawal = stake + "+" + str(reward_balance)
 ignore = do_transaction_raw(tx_in,dest + "+0",str(current_slot + 10000),"0",withdrawal,print_debug)

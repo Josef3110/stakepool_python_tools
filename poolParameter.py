@@ -164,21 +164,18 @@ if args.transaction:
     current_slot = int(tip['slot'])
 
     all_utxo = do_query("utxo",payment_address,magic,print_debug).splitlines()
-    skip_header = 0
     balance = 0
     tx_in = ""
     tx_count = 0
-
     tx_in = []
-    for utxo in all_utxo:
-        if (skip_header < 2):
-         skip_header = skip_header + 1
-        else:
-            col = re.split(r'\s+',utxo)
-            balance = balance + int(col[2])
-            tx_in.append("--tx-in")
-            tx_in.append(col[0] + "#" + col[1])
-            tx_count = tx_count + 1
+
+    while balance < FEE_THRESHOLD:           # add tx_in until amount is available to save fees
+        utxo = all_utxo[tx_count+2]
+        col = re.split(r'\s+',utxo)
+        balance = balance + int(col[2])
+        tx_in.append("--tx-in")
+        tx_in.append(col[0] + "#" + col[1])
+        tx_count = tx_count + 1
 
     ignore = do_transaction_raw(tx_in,payment_address + "+" + str(balance),str(current_slot + 10000),"0",my_config,print_debug)
     get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
