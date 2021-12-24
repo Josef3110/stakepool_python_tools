@@ -9,8 +9,9 @@ import subprocess
 import argparse
 import json
 
-version = "0.6"
-ada2lovelace = 1000000
+VERSION = "0.7"
+ADA2LOVELACE = 1000000
+FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
 def do_query(what,parameter,magic,debug):
     if (what == "tip"):
@@ -88,7 +89,7 @@ parser.add_argument("src_address", metavar="source", type=str, help="the source 
 parser.add_argument("dest_address", metavar="destination", type=str, help="the destination address")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
-parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + version)
+parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
 
@@ -98,7 +99,7 @@ if args.debug:
 else:
     print_debug = False
 
-amount = int(args.amount * ada2lovelace)
+amount = int(args.amount * ADA2LOVELACE)
 src = args.src_address
 dest = args.dest_address
 
@@ -117,21 +118,20 @@ if float(tip['syncProgress']) < 100.0:
 current_slot = int(tip['slot'])
 
 all_utxo = do_query("utxo",src,magic,print_debug).splitlines()
-skip_header = 0
+
+# prepare for loop
 balance = 0
 tx_in = ""
 tx_count = 0
-
 tx_in = []
-for utxo in all_utxo:
-    if (skip_header < 2):
-        skip_header = skip_header + 1
-    else:
-        col = re.split(r'\s+',utxo)
-        balance = balance + int(col[2])
-        tx_in.append("--tx-in")
-        tx_in.append(col[0] + "#" + col[1])
-        tx_count = tx_count + 1
+
+while balance < (amount+FEE_THRESHOLD):           # add tx_in until amount is available to save fees
+    utxo = all_utxo[tx_count+2]
+    col = re.split(r'\s+',utxo)
+    balance = balance + int(col[2])
+    tx_in.append("--tx-in")
+    tx_in.append(col[0] + "#" + col[1])
+    tx_count = tx_count + 1
 
 ignore = do_transaction_raw(tx_in,src + "+0",dest + "+0",str(current_slot + 10000),"0",print_debug)
 get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
