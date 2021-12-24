@@ -148,7 +148,7 @@ Managing pool parameters require multiple steps. First you need a configuration 
 	}
     ],
     "metaDataURL":   "<meta data URL>",   # the URL to your pools meta data information
-    "metaDataHash":  "<meta data hash>".  # the hash code generated for your meta data
+    "metaDataHash":  "<meta data hash>",  # the hash code generated for your meta data
     "poolCert": "pool.cert",		  # the path for the pool.cert
     "delegCert": "deleg.cert"		  # the path for the deleg.cert
 
