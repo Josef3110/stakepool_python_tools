@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-VERSION = "0.7"
+VERSION = "0.8"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -121,7 +121,6 @@ all_utxo = do_query("utxo",src,magic,print_debug).splitlines()
 
 # prepare for loop
 balance = 0
-tx_in = ""
 tx_count = 0
 tx_in = []
 
