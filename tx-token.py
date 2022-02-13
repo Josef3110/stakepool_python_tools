@@ -10,7 +10,7 @@ import argparse
 import json
 import base64
 
-VERSION = "0.1"
+VERSION = "0.2"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -33,14 +33,17 @@ def do_query(what,parameter,magic,debug):
         sys.exit()
     else:
         return (get_it[0])
-
-def do_transaction_raw(tx_in,src,dest,slot,fee,debug):
-    command = "cardano-cli transaction build-raw" + tx_in 
+        
+def do_transaction(tx_in,src_addr,src,dest,slot,magic,debug):
+    command = "cardano-cli transaction build" + tx_in 
     command = command + " --tx-out " + dest
     command = command + " --tx-out " + src
+    command = command + " --change-address " + src_addr
     command = command + " --invalid-hereafter " + slot
-    command = command + " --fee " + fee
-    command = command + " --out-file tx.draft"
+    command = command + " --alonzo-era "
+    command = command + " --witness-override 1 "
+    command = command + " --out-file tx.draft "
+    command = command + magic
     if debug:
         print("DEBUG: " + str(command))
     p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,shell=True)
@@ -50,30 +53,7 @@ def do_transaction_raw(tx_in,src,dest,slot,fee,debug):
         sys.exit()
     else:
         return (get_it[0])
-
-def do_calculate_fee(count,magic,debug):
-    command = ["cardano-cli", "transaction", "calculate-min-fee"]
-    command.append("--tx-body-file")
-    command.append("tx.draft")
-    command.append("--tx-in-count")
-    command.append(count)
-    command.append("--tx-out-count")
-    command.append("2")
-    command.append("--witness-count")
-    command.append("1")
-    command.append("--protocol-params-file")
-    command.append("params.json")
-    command = command + magic
-    if debug:
-        print("DEBUG: " + str(command))
-    p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
-    get_it = p.communicate()
-    if (get_it[1] != ""):
-        print("ERROR: " + get_it[1])
-        sys.exit()
-    else:
-        return (get_it[0])
-
+        
 # main
 
 # start with parsing arguments
@@ -102,12 +82,14 @@ dest = args.dest_address
 
 if args.testnet_magic:
     magic = ["--testnet-magic", str(args.testnet_magic)]
+    magic_str = " --testnet-magic " + str(args.testnet_magic)
 else:
     magic = ["--mainnet"]
+    magic_str = " --mainnet"
 
+# convert the token name to base16 encoded value
 token_enc = str(base64.b16encode(str.encode(token_name)).decode('utf8')).lower()
 
-ignore = do_query("protocol-parameters","",magic,print_debug)
 tip = json.loads(do_query("tip","",magic,print_debug))
 
 if float(tip['syncProgress']) < 100.0:
@@ -147,23 +129,16 @@ if len(token) == 0:
     print("ERROR: not enough " + token_name + " in src address")
     sys.exit()
 
-
-oneADA = int(1.4*ADA2LOVELACE)
+#oneADA = ADA2LOVELACE
+oneADA = 1344798
 tx_out_dest = dest + '+' + str(oneADA) + '+"' + str(token_amount) + ' ' + token[0] + '.' + token[1] + '"'
 
-ada_remaining = ada_balance - oneADA
+#ada_remaining = ada_balance - oneADA
 token_remaining = token_balance - token_amount
-tx_out_src = src + '+' + str(ada_remaining) + '+"' + str(token_remaining) + ' ' + token[0] + '.' + token[1] + '"'
-
-ignore = do_transaction_raw(tx_in,tx_out_src,tx_out_dest,str(current_slot + 10000),"0",print_debug)
-get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
-fee = int(get_tx_fee.split(" ")[0])
-ada_remaining = ada_balance - oneADA - fee
-tx_out_src = src + '+' + str(ada_remaining) + '+"' + str(token_remaining) + ' ' + token[0] + '.' + token[1] + '"'
-
+tx_out_src = src + '+' + str(oneADA) + '+"' + str(token_remaining) + ' ' + token[0] + '.' + token[1] + '"'
 
 # feedback what's in the transaction
-print("sending " + str(token_amount) + " " + token_name + " and 1 ADA and a fee of " + str(fee) + " lovelace")
+print("sending " + str(token_amount) + " " + token_name + " and " + str(oneADA) + " plus some fee")
 print("from " + src)
 print("to   " + dest)
 if args.testnet_magic:
@@ -171,5 +146,6 @@ if args.testnet_magic:
 else:
     print("on mainnet")
 
-ignore = do_transaction_raw(tx_in,tx_out_src,tx_out_dest,str(current_slot + 10000),str(fee),print_debug)
+fee = do_transaction(tx_in,src,tx_out_src,tx_out_dest,str(current_slot+10000),magic_str,print_debug)
+print("fee = " + fee)
 
