@@ -125,5 +125,5 @@ while True:
 #        print(json.dumps(message))
         response = postPooltool(json.dumps(message))
         print(response.json())
-        time.sleep(5)
+        time.sleep(15)
 
