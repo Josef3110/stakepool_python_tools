@@ -30,7 +30,7 @@ to sign the transaction is:
 ```
 cardano-cli transaction sign \
     --tx-body-file tx.draft \
-    --signing-key-file payment.skey \
+    --signing-key-file <payment.skey> \
     --mainnet \
     --out-file tx.signed
 ```
