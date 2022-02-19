@@ -1,0 +1,24 @@
+[Unit]
+Description=ADAAT sendtip
+After=multi-user.target
+
+[Service]
+User=cardano
+Group=cardano
+Type=simple
+Environment="CARDANO_NODE_SOCKET_PATH=/home/cardano/mainnet-node/db/node.socket"
+Environment="PATH=$PATH:/home/cardano/.local/bin"
+WorkingDirectory=/home/cardano/.local/bin
+ExecStart=/home/cardano/.local/bin/sendtip.py -a <api-key> -p <poolId>
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sendtip
+KillSignal=SIGINT
+RestartKillSignal=SIGINT
+TimeoutStopSec=10
+LimitNOFILE=32768
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
