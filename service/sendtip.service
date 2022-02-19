@@ -7,6 +7,7 @@ User=cardano
 Group=cardano
 Type=simple
 Environment="CARDANO_NODE_SOCKET_PATH=/home/cardano/mainnet-node/db/node.socket"
+Environment="LD_LIBRARY_PATH=/home/cardano/.local/lib"
 Environment="PATH=$PATH:/home/cardano/.local/bin"
 WorkingDirectory=/home/cardano/.local/bin
 ExecStart=/home/cardano/.local/bin/sendtip.py -a <api-key> -p <poolId>
