@@ -12,7 +12,7 @@ import requests
 import time
 from datetime import datetime
 
-VERSION = "0.2"
+VERSION = "0.3"
 PLATFORM = "sendtip.py by ADAAT"
 URL = "https://api.pooltool.io/v0/sendstats"
 
@@ -75,7 +75,7 @@ def get_node_version(magic,debug):
 parser = argparse.ArgumentParser(description="sendtip for pooltool.io")
 parser.add_argument("-a", "--apiKey", type=str, nargs='?', help="API key from pooltool.io")
 parser.add_argument("-p", "--poolId", type=str, nargs='?', help="pool ID")
-parser.add_argument("-c", "--config", type=str, nargs='?', help="path to config file in json format", default="pooltool.json")
+parser.add_argument("-c", "--config", type=str, nargs='?', help="path to config file in json format")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
@@ -95,19 +95,25 @@ else:
     magic = ["--mainnet"]
     magic_param = "--mainnet"
 
-#if args.config:
-if not magic:
+if args.config:
         my_config = getconfig(args.config)
+        api_key = my_config['api_key']
+        poolID = my_config['pools'][0]['pool_id']
 else:        
         api_key = args.apiKey
         poolID = args.poolId
-
+        
 node_version = get_node_version(magic,print_debug).splitlines()
 row1 = re.split(r'\s+',node_version[0])
 row2 = re.split(r'\s+',node_version[1])
 node_version = row1[1]
 node_git = row2[2]
 last_block = ""
+
+print("sendtip is configured with:")
+print("\tAPI key " + api_key)
+print("\tpool ID " + poolID )
+print("\tversion " + node_version + ":" + node_git[:5])
 
 while True:
         tip = json.loads(do_query(magic,print_debug))
@@ -125,7 +131,7 @@ while True:
 #        print(json.dumps(message))
         if last_block != tip["block"]:
                 response = postPooltool(json.dumps(message))
-                print(response.json())
+                print("pooltool.io response: " + response.json())
         last_block = tip["block"]
         time.sleep(5)
 
