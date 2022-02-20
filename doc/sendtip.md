@@ -1,12 +1,30 @@
-## topology updater
+## sentip
 
-As a starter, an alternative to topologyUpdater.sh is provided. It does exactly the same thing as the original, just with some simpler configuration options.
+sendtip.py is a tool to send tip information to pooltool.io. SPO's can compare their pools performance with other pools also sending tip. Usually, this is done via cncli, but this requires a fully synced cncli database. As an alternative some shell scripts can be used. Still this implementation in python offers a bit more flexibility. One can use the pooltool.json configuration file from cncli or using the command line to set the parameters.
 
-The current version supports the same command line options as the shell script. In addition it reads a config json file as shown in the example. All important parameters are supplied by the config file. I.e., there's no additional editing of the python script necessary. All exceptions are checked and - if configured - sent over to an admin account for monitoring. Also the returncodes from www.clio.one are checked and in case of an error an email will be sent.
+This is the synopsis of sendtip.py:
 
-A working smtp server is necessary in order for emails to arrive at the destination email.
+```
+usage: sendtip.py [-h] [-a [APIKEY]] [-p [POOLID]] [-c [CONFIG]] [-t [TESTNET_MAGIC]] [-d] [-v]
 
-There's no env file and no automatic update of the script itself. The script works as it is with no guarantees whatsoever. Please, use it with care!
+sendtip for pooltool.io
+
+options:
+  -h, --help            show this help message and exit
+  -a [APIKEY], --apiKey [APIKEY]
+                        API key from pooltool.io
+  -p [POOLID], --poolId [POOLID]
+                        pool ID
+  -c [CONFIG], --config [CONFIG]
+                        path to config file in json format
+  -t [TESTNET_MAGIC], --testnet-magic [TESTNET_MAGIC]
+                        run on testnet with magic number
+  -d, --debug           prints debugging information
+  -v, --version         show program's version number and exit
+
+```
+
+Like with cncli, an example for a systemd service can be found in ../service/sendtip.service.
 
 ## support development
 
