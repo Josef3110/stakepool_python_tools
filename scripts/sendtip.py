@@ -12,7 +12,7 @@ import requests
 import time
 from datetime import datetime
 
-VERSION = "0.3"
+VERSION = "0.4"
 PLATFORM = "sendtip.py by ADAAT"
 URL = "https://api.pooltool.io/v0/sendstats"
 
@@ -109,6 +109,7 @@ row2 = re.split(r'\s+',node_version[1])
 node_version = row1[1]
 node_git = row2[2]
 last_block = ""
+prev_block_hash = ""
 
 print("sendtip is configured with:")
 print("\tAPI key " + api_key)
@@ -127,11 +128,14 @@ while True:
         message["data"]["blockNo"] = tip["block"]
         message["data"]["slotNo"] = tip["slot"]
         message["data"]["blockHash"] = tip["hash"]
+        if prev_block_hash != "":
+                message["data"]["parentHash"] = prev_block_hash
         message["data"]["platform"] = PLATFORM
 #        print(json.dumps(message))
         if last_block != tip["block"]:
                 response = postPooltool(json.dumps(message))
-                print("pooltool.io response: " + response.json())
+                print("pooltool.io response: " + str(response.json()))
+                prev_block_hash = tip["hash"]
         last_block = tip["block"]
         time.sleep(5)
 
