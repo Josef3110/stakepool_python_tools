@@ -1,0 +1,21 @@
+{
+  "api_key": "pooltool API key",
+  "pools": [
+      {
+          "name": "ADAAT",
+          "pool_id": "your pool id"
+      }
+  ],
+  "genesis_file": "path to shelley-genesis.json",
+  "key_file": "path to vrf.skey",
+  "saved_data": [
+  	{
+	  "epoch": 425,
+  	  "slots": []
+	},
+	{
+	  "epoch": 426,
+	  "slots": []
+	}
+  ]
+}
