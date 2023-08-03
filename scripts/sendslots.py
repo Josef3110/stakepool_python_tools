@@ -13,7 +13,7 @@ import hashlib
 import time
 from datetime import datetime
 
-VERSION = "0.4"
+VERSION = "0.5"
 PLATFORM = "sendslots.py by ADAAT"
 URL = "https://api.pooltool.io/v0/sendslots"
 
@@ -42,6 +42,11 @@ def getconfig(configfile):
     with open(configfile) as f:
         data = json.load(f)
     return data;
+    
+def writeconfig(configfile,configjson):
+    with open(configfile, 'w') as f:
+        f.write(json.dumps(configjson))
+    return 0;
 
 def parse_query(leader):
     slot_list = []
@@ -67,18 +72,6 @@ def do_query(what,config,magic,debug):
         command.append(config['key_file'])
         command.append("--current")
     command = command + magic        
-    if debug:
-        print("DEBUG: " + str(command))
-    p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
-    get_it = p.communicate()
-    if (get_it[1] != ""):
-        print("ERROR: " + get_it[1])
-        sys.exit()
-    else:
-        return (get_it[0])
-
-def get_node_version(magic,debug):
-    command = ["cardano-node", "--version"]
     if debug:
         print("DEBUG: " + str(command))
     p = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
@@ -123,11 +116,6 @@ if args.config:
 else:        
         print("ERROR: please provide a config file!")
         
-#node_version = get_node_version(magic,print_debug).splitlines()
-#row1 = re.split(r'\s+',node_version[0])
-#row2 = re.split(r'\s+',node_version[1])
-#node_version = row1[1]
-#node_git = row2[2]
 last_block = ""
 prev_block_hash = ""
 
@@ -135,30 +123,47 @@ if print_debug:
         print("sendslots is configured with:")
         print("\tAPI key " + api_key)
         print("\tpool ID " + poolID )
-#       print("\tversion " + node_version + ":" + node_git[:5])
         print("\tgenesis file " + genesis_file)
         print("\tkey file " + key_file)
+        print("\tsaved_data " + str(my_config['saved_data']))
 
 tip = json.loads(do_query("tip",{},magic,print_debug))
 if float(tip['syncProgress']) < 100.0:
         print("ERROR: node not in sync, please wait until sync process has been finished")
         sys.exit()
  
-epoch = tip['epoch'] 
-leader = do_query("leadership-schedule",my_config,magic,print_debug)
-slot_list = parse_query(leader)
-if print_debug:
-        print("DEBUG: " + str(slot_list))
+epoch = tip['epoch']
+epoch1 = my_config['saved_data'][0]['epoch']
+epoch2 = my_config['saved_data'][1]['epoch']
+
+if ((epoch-1) > epoch1):
+        my_config['saved_data'][0]['epoch'] = epoch - 1
+        if (epoch2 == (epoch-1)):
+                my_config['saved_data'][0]['slots'] = my_config['saved_data'][1]['slots']
+        else:                
+                my_config['saved_data'][0]['slots'] = []
+if (epoch > epoch2):
+        leader = do_query("leadership-schedule",my_config,magic,print_debug)
+        slot_list = parse_query(leader)
+        if print_debug:
+                print("DEBUG: " + str(slot_list))
+        my_config['saved_data'][1]['epoch'] = epoch
+        my_config['saved_data'][1]['slots'] = slot_list
+print("saving new data back to config file")
+writeconfig(args.config,my_config)
+#sys.exit()
+        
 message = {}
 message["apiKey"] = api_key
 message["poolId"] = poolID
 message["epoch"] = epoch
-message["slotQty"] = len(slot_list)
-var hashed_slots = new Uint8Array(32)
-hash = blake2b(hashed_slots.length).update(str(slot_list)).digest('hex')
-message["hash"] = hash
-#message["prevSlots"] =
-print(json.dumps(message))
+message["slotQty"] = len(my_config['saved_data'][1]['slots'])
+slot_list_str = str(my_config['saved_data'][1]['slots'])
+hash = hashlib.blake2b(slot_list_str.encode()).hexdigest()
+message["hash"] = str(hash)
+message["prevSlots"] = str(my_config['saved_data'][0]['slots'])
+if print_debug:
+        print(json.dumps(message))
 #response = postPooltool(json.dumps(message))
 #print("pooltool.io response: " + str(response.json()))
 

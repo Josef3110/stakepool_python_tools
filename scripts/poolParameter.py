@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-VERSION = "0.5"
+VERSION = "0.6"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -121,7 +121,7 @@ parser = argparse.ArgumentParser(description="generates a script to produce a po
 parser.add_argument("-tx", "--transaction", type=str, metavar="ADDRESS", help="generate a transaction using ADDRESS as payment adress")
 parser.add_argument("-g", "--generate", type=str, metavar="FILE", nargs='?', help="generate shell script into FILE", default="reg_cert.sh")
 parser.add_argument("-c", "--config", type=str, nargs='?', help="path to config file in json format", default="poolParameter.json")
-parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()

@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-VERSION = "0.3"
+VERSION = "0.4"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -89,7 +89,7 @@ def do_calculate_fee(count,magic,debug):
 parser = argparse.ArgumentParser(description="build a transaction for signing with your keys")
 parser.add_argument("stake_address", type=str, help="the stake address")
 parser.add_argument("dest_address",  type=str, help="the destination address")
-parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()
@@ -147,7 +147,7 @@ withdrawal = stake + "+" + str(reward_balance)
 ignore = do_transaction_raw(tx_in,dest + "+0",str(current_slot + 10000),"0",withdrawal,print_debug)
 get_tx_fee = do_calculate_fee(str(tx_count),magic,print_debug)
 fee = int(get_tx_fee.split(" ")[0])
-tx_out = balance - fee - reward_balance
+tx_out = balance - fee + reward_balance
 
 # feedback what's in the transaction
 print("sending " + str(reward_balance) + " lovelace and a fee of " + str(fee) + " lovelace")
@@ -158,4 +158,4 @@ if args.testnet_magic:
 else:
     print("on mainnet")
 
-ignore = do_transaction_raw(tx_in,dest + "+" + str(amount),str(current_slot + 10000),str(fee),withdrawal,print_debug)
+ignore = do_transaction_raw(tx_in,dest + "+" + str(tx_out),str(current_slot + 10000),str(fee),withdrawal,print_debug)

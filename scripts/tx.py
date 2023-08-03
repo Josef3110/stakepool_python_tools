@@ -9,7 +9,7 @@ import subprocess
 import argparse
 import json
 
-VERSION = "0.8"
+VERSION = "0.9"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -87,7 +87,7 @@ parser = argparse.ArgumentParser(description="build a transaction for signing wi
 parser.add_argument("amount", metavar="amount", type=float, help="the amount of the transaction in ADA")
 parser.add_argument("src_address", metavar="source", type=str, help="the source address")
 parser.add_argument("dest_address", metavar="destination", type=str, help="the destination address")
-parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()

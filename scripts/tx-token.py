@@ -10,7 +10,7 @@ import argparse
 import json
 import base64
 
-VERSION = "0.2"
+VERSION = "0.3"
 ADA2LOVELACE = 1000000
 FEE_THRESHOLD = int(0.2 * ADA2LOVELACE)
 
@@ -63,7 +63,7 @@ parser.add_argument("amount", metavar="amount", type=int, help="the amount token
 parser.add_argument("token", metavar="token name", type=str, help="the name of the token")
 parser.add_argument("src_address", metavar="source", type=str, help="the source address")
 parser.add_argument("dest_address", metavar="destination", type=str, help="the destination address")
-parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + VERSION)
 args = parser.parse_args()

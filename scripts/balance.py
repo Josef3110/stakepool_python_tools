@@ -10,7 +10,7 @@ import argparse
 import json
 import base64
 
-version = "0.6"
+version = "0.7"
 ada2lovelace = 1000000
 
 def do_query(what,parameter,magic,debug):
@@ -38,7 +38,7 @@ def do_query(what,parameter,magic,debug):
 
 parser = argparse.ArgumentParser(description="query balance for a given address")
 parser.add_argument("address", type=str, help="the address")
-parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1097911063, help="run on testnet with magic number")
+parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-v", "--version", action="version", version='%(prog)s Version ' + version)
 args = parser.parse_args()
