@@ -160,13 +160,9 @@ message["epoch"] = epoch
 message["slotQty"] = len(my_config['saved_data'][1]['slots'])
 slotsstring = json.dumps(my_config['saved_data'][1]['slots'],separators=(',', ':'))
 ## code snipet provided by papacarp from pooltool.io
-print(slotsstring)
-
 h=hashlib.blake2b(digest_size=32)
 h.update(slotsstring.encode())
 hresult=h.hexdigest()
-
-print(hresult)
 ##
 message["hash"] = str(hresult)
 message["prevSlots"] = str(my_config['saved_data'][0]['slots'])
