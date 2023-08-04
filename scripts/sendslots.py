@@ -164,7 +164,7 @@ message["hash"] = str(hash)
 message["prevSlots"] = str(my_config['saved_data'][0]['slots'])
 if print_debug:
         print(json.dumps(message))
-#response = postPooltool(json.dumps(message))
-#print("pooltool.io response: " + str(response.json()))
-
+response = postPooltool(json.dumps(message))
+if print_debug:
+        print("pooltool.io response: " + str(response.json()))
 
