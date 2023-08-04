@@ -13,7 +13,7 @@ import hashlib
 import time
 from datetime import datetime
 
-VERSION = "0.5"
+VERSION = "0.6"
 PLATFORM = "sendslots.py by ADAAT"
 URL = "https://api.pooltool.io/v0/sendslots"
 
@@ -58,7 +58,7 @@ def parse_query(leader):
                 skip_header = skip_header + 1
         else:
                 col = re.split(r'\s+',leader_line)
-                slot_list.append(col[1])
+                slot_list.append(int(col[1]))
     return slot_list;
 
 def do_query(what,config,magic,debug):
@@ -146,7 +146,7 @@ if (epoch > epoch2):
         leader = do_query("leadership-schedule",my_config,magic,print_debug)
         slot_list = parse_query(leader)
         if print_debug:
-                print("DEBUG: " + str(slot_list))
+                print("DEBUG: current list of slots " + str(slot_list))
         my_config['saved_data'][1]['epoch'] = epoch
         my_config['saved_data'][1]['slots'] = slot_list
 print("saving new data back to config file")
@@ -158,9 +158,17 @@ message["apiKey"] = api_key
 message["poolId"] = poolID
 message["epoch"] = epoch
 message["slotQty"] = len(my_config['saved_data'][1]['slots'])
-slot_list_str = str(my_config['saved_data'][1]['slots'])
-hash = hashlib.blake2b(slot_list_str.encode()).hexdigest()
-message["hash"] = str(hash)
+slotsstring = json.dumps(my_config['saved_data'][1]['slots'],separators=(',', ':'))
+## code snipet provided by papacarp from pooltool.io
+print(slotsstring)
+
+h=hashlib.blake2b(digest_size=32)
+h.update(slotsstring.encode())
+hresult=h.hexdigest()
+
+print(hresult)
+##
+message["hash"] = str(hresult)
 message["prevSlots"] = str(my_config['saved_data'][0]['slots'])
 if print_debug:
         print(json.dumps(message))
