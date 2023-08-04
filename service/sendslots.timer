@@ -1,0 +1,11 @@
+[Unit]
+Description=Sendlots to pooltool.io with sendslots.py provided by ADAAT
+
+[Timer]
+#OnActiveSec=5d
+OnUnitActiveSec=5d
+OnCalendar=2023-07-04 22:10:00 UTC
+#Persistent=true
+
+[Install]
+WantedBy=timers.target

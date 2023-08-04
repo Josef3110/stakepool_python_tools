@@ -1,0 +1,21 @@
+[Unit]
+Description=Sendlots to pooltool.io with sendslots.py provided by ADAAT
+After=multi-user.target
+
+[Service]
+User=cardano
+Group=cardano
+Type=oneshot
+LimitNOFILE=131072
+Environment="CARDANO_NODE_SOCKET_PATH=/home/cardano/mainnet-node/db/node.socket"
+Environment="LD_LIBRARY_PATH=/home/cardano/.local/lib"
+Environment="PATH=$PATH:/home/cardano/.local/bin"
+ExecStart=/home/cardano/tools/sendslots.py -c /home/cardano/tools/sendslots.json
+KillSignal=SIGINT
+SuccessExitStatus=143
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sendslots
+
+[Install]
+WantedBy=multi-user.target
