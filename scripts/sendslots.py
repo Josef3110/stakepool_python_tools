@@ -13,7 +13,7 @@ import hashlib
 import time
 from datetime import datetime
 
-VERSION = "0.6"
+VERSION = "0.7"
 PLATFORM = "sendslots.py by ADAAT"
 URL = "https://api.pooltool.io/v0/sendslots"
 
@@ -45,7 +45,7 @@ def getconfig(configfile):
     
 def writeconfig(configfile,configjson):
     with open(configfile, 'w') as f:
-        f.write(json.dumps(configjson))
+        f.write(json.dumps(configjson,indent=4))
     return 0;
 
 def parse_query(leader):
@@ -151,7 +151,6 @@ if (epoch > epoch2):
         my_config['saved_data'][1]['slots'] = slot_list
 print("saving new data back to config file")
 writeconfig(args.config,my_config)
-#sys.exit()
         
 message = {}
 message["apiKey"] = api_key
@@ -165,7 +164,7 @@ h.update(slotsstring.encode())
 hresult=h.hexdigest()
 ##
 message["hash"] = str(hresult)
-message["prevSlots"] = str(my_config['saved_data'][0]['slots'])
+message["prevSlots"] = json.dumps(my_config['saved_data'][0]['slots'],separators=(',', ':'))
 if print_debug:
         print(json.dumps(message))
 response = postPooltool(json.dumps(message))
