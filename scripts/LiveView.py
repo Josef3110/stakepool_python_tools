@@ -12,20 +12,30 @@ import json
 import time
 from datetime import datetime
 
-VERSION = "0.2"
+VERSION = "0.3"
 NODE_NAME = "Cardano Node" 
 REFRESH_RATE = 2
 
 # define some default values upfront
 
-MAINNET_MAGIC = "764824073"                     # network magic for mainnet - if you want a testnet then change the value in config file instead
 METRICS_URL = "http://localhost:12788"
 HEADERS = {'Accept': 'application/json'}
-WIDTH = 71
-#char_marked = $(printf "\\u258C")
-#char_unmarked = $(printf "\\u2596")
+WIDTH = 70
+MARKED = "\u258C"
+UNMARKED = "\u2596"
+VL = "\u2502"
+HL = "\u2500"
+LVL = "\u2524"
+RVL = "\u251C"
+UHL = "\u2534"
+DHL = "\u252C"
+UR = "\u2514"
+UL = "\u2518"
+DR = "\u250C"
+DL = "\u2510"
 
-
+#print(LVL + VL + RVL)
+#print(UHL + HL + DHL)
 
 def get_node_version(debug):
     command = ["cardano-node", "version"]        
@@ -42,8 +52,8 @@ def get_node_version(debug):
 def timestamp4log():
     return datetime.now().strftime("%d.%m.%Y %H:%M:%S");
 
-def get_genesis(shelleyGenesis):
-    with open(shelleyGenesis) as f:
+def get_parameter(sourceFile):
+    with open(sourceFile) as f:
         data = json.load(f)
     return data;
 
@@ -65,6 +75,10 @@ def requestmetric(url):
 
 # main
 
+completeLine = ""
+for i in range(0,WIDTH):
+        completeLine = completeLine + HL
+        
 #ec = {}
 #sys.excepthook = exception_handler
 
@@ -72,11 +86,10 @@ def requestmetric(url):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--version", help="displays version and exits", action="store_true")
-parser.add_argument("-c", "--config", help="path to config file in json format", default="pLiveView.json")
+parser.add_argument("-c", "--config", help="path to config file in json format", default="config.json")
 parser.add_argument("-t", "--testnet-magic", type=int, nargs='?', const=1, help="run on preprod testnet with magic number")
 parser.add_argument("-d", "--debug", help="prints debugging information", action="store_true")
 parser.add_argument("-p", "--port", help="port number of the node", default="6000")
-parser.add_argument("-sg", "--genesis", help="path to shelley genesis file")
 
 args = parser.parse_args()
 myname = os.path.basename(sys.argv[0])
@@ -92,9 +105,17 @@ else:
     print_debug = False
     
 nodePort = args.port
-parameter = get_genesis(args.genesis)
+parameter = get_parameter(args.config)
 
-networkId = parameter["networkId"]
+genesisFile = parameter["ShelleyGenesisFile"]
+genesis = get_parameter(genesisFile)
+
+networkId = genesis["networkId"]
+networkMagic = genesis["networkMagic"]
+systemStart = genesis["systemStart"]
+epochLength = genesis["epochLength"]
+slotLength = genesis["slotLength"]
+activeSlotsCoeff = genesis["activeSlotsCoeff"]
 
 #if args.config:
 #    my_config = getconfig(args.config)
@@ -148,7 +169,8 @@ else:
         nodeMode = "Core"
 
 print("\t> " + NODE_NAME + " - (" + nodeMode + " - " + networkId + ") : " + nodeVersion + " [" + nodeRevision + "] <")
-print("Uptime: " + " | Port: " + nodePort + " | ADAAT " + myname + " " + VERSION + " |")
-print("Epoch " + str(epoch) + " [" + "], " + " remaining")
-print("Block\t: " + str(blockNum) + "\tTip (ref)\t:" + "\tForks\t\t: " + str(forks))
-print("Slot\t: " + str(slotNum) + "\tTip (diff)\t:" + "\tTotal Tx\t: " + str(txsProcessedNum))
+print(completeLine)
+print(VL + " Uptime: " + "\t\t\t" + VL + " Port: " + nodePort + " " + VL + " ADAAT " + myname + " " + VERSION + " " + VL)
+print(VL + " Epoch " + str(epoch) + " [" + "], " + " remaining")
+print(VL + " Block\t: " + str(blockNum) + "\tTip (ref)\t:" + "\tForks\t\t: " + str(forks))
+print(VL + " Slot\t: " + str(slotNum) + "\tTip (diff)\t:" + "\tTotal Tx\t: " + str(txsProcessedNum))
