@@ -12,15 +12,15 @@ import json
 import time
 from datetime import datetime
 
-VERSION = "0.3"
+VERSION = "0.4"
 NODE_NAME = "Cardano Node" 
-REFRESH_RATE = 2
+REFRESH_RATE = 3
 
 # define some default values upfront
 
 METRICS_URL = "http://localhost:12788"
 HEADERS = {'Accept': 'application/json'}
-WIDTH = 70
+WIDTH = 72
 MARKED = "\u258C"
 UNMARKED = "\u2596"
 VL = "\u2502"
@@ -33,6 +33,35 @@ UR = "\u2514"
 UL = "\u2518"
 DR = "\u250C"
 DL = "\u2510"
+
+#    style_title=${FG_MAGENTA}${BOLD}      # style of title
+#    style_base=${FG_BLACK}                # default color for text and lines
+#    style_values_1=${FG_BLUE}             # color of most live values
+#    style_values_2=${FG_GREEN}            # color of node name
+#    style_values_3=${STANDOUT}            # color of selected outgoing/incoming paging
+#    style_values_4=${FG_LGRAY}               # color of informational text
+#    style_info=${FG_YELLOW}               # info messages
+#    style_status_1=${FG_GREEN}            # :)
+#    style_status_2=${FG_YELLOW}           # :|
+#    style_status_3=${FG_RED}              # :(
+#    style_status_4=${FG_MAGENTA}          # :((
+    
+class bcolors:
+        FG_BLACK = '\033[30m'
+        FG_RED = '\033[31m'
+        FG_GREEN = '\033[32m'
+        FG_YELLOW = '\033[33m'
+        FG_BLUE = '\033[34m'
+        FG_MAGENTA = '\033[35m'
+        FG_CYAN = '\033[36m'
+        FG_LGRAY = '\033[37m'
+        FG_DGRAY = '\033[90m'
+        FG_LBLUE = '\033[94m'
+        FG_WHITE = '\033[97m'
+        STANDOUT = '\033[7m'
+        BOLD = '\033[1m'
+        NC = '\033[0m'    
+    
 
 #print(LVL + VL + RVL)
 #print(UHL + HL + DHL)
@@ -75,9 +104,23 @@ def requestmetric(url):
 
 # main
 
-completeLine = ""
-for i in range(0,WIDTH):
-        completeLine = completeLine + HL
+topLine = DR
+for i in range(0,WIDTH-2):
+        if i == 33:
+                topLine = topLine + DHL
+        else:
+                if i == 46:
+                        topLine = topLine + DHL
+                else:                        
+                        topLine = topLine + HL
+topLine = topLine + DL
+line2 = VL + " ------------------------------- " + UR
+for i in range(0,12):
+        line2 = line2 + HL
+line2 = line2 + UHL
+for i in range(0,23):
+        line2 = line2 + HL
+line2 = line2 + UL
         
 #ec = {}
 #sys.excepthook = exception_handler
@@ -105,9 +148,19 @@ else:
     print_debug = False
     
 nodePort = args.port
-parameter = get_parameter(args.config)
+
+if args.config:
+        parameter = get_parameter(args.config)
+else:
+        print("ERROR: path to config file required")
+        sys.exit()
 
 genesisFile = parameter["ShelleyGenesisFile"]
+if parameter["EnableP2P"] == "true":
+        p2p = "enabled"
+else:
+        p2p = "disabled"
+        
 genesis = get_parameter(genesisFile)
 
 networkId = genesis["networkId"]
@@ -116,6 +169,7 @@ systemStart = genesis["systemStart"]
 epochLength = genesis["epochLength"]
 slotLength = genesis["slotLength"]
 activeSlotsCoeff = genesis["activeSlotsCoeff"]
+
 
 #if args.config:
 #    my_config = getconfig(args.config)
@@ -145,14 +199,27 @@ metrics = requestmetric(METRICS_URL)
 #print(response.encoding)
 
 epoch = metrics["cardano"]["node"]["metrics"]["epoch"]["int"]["val"]
+
 blockNum = metrics["cardano"]["node"]["metrics"]["blockNum"]["int"]["val"]
 slotInEpoch = metrics["cardano"]["node"]["metrics"]["slotInEpoch"]["int"]["val"]
 slotNum = metrics["cardano"]["node"]["metrics"]["slotNum"]["int"]["val"]
-density = metrics["cardano"]["node"]["metrics"]["density"]["real"]["val"]
+density = round(float(metrics["cardano"]["node"]["metrics"]["density"]["real"]["val"]),3)
 forks = metrics["cardano"]["node"]["metrics"]["forks"]["int"]["val"]
 txsProcessedNum = metrics["cardano"]["node"]["metrics"]["txsProcessedNum"]["int"]["val"]
 txsInMempool = metrics["cardano"]["node"]["metrics"]["txsInMempool"]["int"]["val"]
-mempoolBytes = metrics["cardano"]["node"]["metrics"]["mempoolBytes"]["int"]["val"]
+mempoolKBytes = round(int(metrics["cardano"]["node"]["metrics"]["mempoolBytes"]["int"]["val"])/1024,0)
+
+peersCold = metrics["cardano"]["node"]["metrics"]["peerSelection"]["cold"]["val"]
+peersWarm = metrics["cardano"]["node"]["metrics"]["peerSelection"]["warm"]["val"]
+peersHot = metrics["cardano"]["node"]["metrics"]["peerSelection"]["hot"]["val"]
+
+incomingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["incomingConns"]["val"]
+outgoingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["outgoingConns"]["val"]
+unidirectionalConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["unidirectionalConns"]["val"]
+duplexConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["duplexConns"]["val"]
+prunableConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["prunableConns"]["val"]
+
+epochProgress = round(slotInEpoch/epochLength * 100,2)
 
 #response_list = response.text.splitlines(True)
 #metrics = {}
@@ -168,9 +235,17 @@ if aboutToLead == 0:
 else:
         nodeMode = "Core"
 
-print("\t> " + NODE_NAME + " - (" + nodeMode + " - " + networkId + ") : " + nodeVersion + " [" + nodeRevision + "] <")
-print(completeLine)
-print(VL + " Uptime: " + "\t\t\t" + VL + " Port: " + nodePort + " " + VL + " ADAAT " + myname + " " + VERSION + " " + VL)
-print(VL + " Epoch " + str(epoch) + " [" + "], " + " remaining")
-print(VL + " Block\t: " + str(blockNum) + "\tTip (ref)\t:" + "\tForks\t\t: " + str(forks))
-print(VL + " Slot\t: " + str(slotNum) + "\tTip (diff)\t:" + "\tTotal Tx\t: " + str(txsProcessedNum))
+print("\t> " + bcolors.FG_GREEN + NODE_NAME + bcolors.FG_BLACK + " - " + bcolors.FG_YELLOW +  "(" + nodeMode + " - " + networkId + ")" + bcolors.FG_BLACK + " : " + bcolors.FG_BLUE + nodeVersion + bcolors.FG_BLACK + " [" + bcolors.FG_BLUE + nodeRevision + bcolors.FG_BLACK + "] <")
+print(topLine)
+print(VL + " Uptime: " + "\t\t\t  " + VL + " Port: " + bcolors.FG_GREEN + nodePort + bcolors.FG_BLACK + " " + VL + bcolors.FG_MAGENTA + " ADAAT " + myname + " " + VERSION + " " + bcolors.FG_BLACK + VL)
+print(line2)
+print(VL + " Epoch " + str(epoch) + " [" + str(epochProgress) +"%], " + " remaining " + VL) 
+print(VL + " Block      : " + str(blockNum) + "\tTip (ref)\t:" + "\tForks\t\t: " + str(forks) + " " + VL) 
+print(VL + " Slot       : " + str(slotNum) + "\tTip (diff)\t:" + "\tTotal Tx\t: " + str(txsProcessedNum) + " " + VL)
+print(VL + " Slot epoch : " + str(slotInEpoch) + "\tDensity\t: " + str(density) + "\tPending Tx : " + str(txsInMempool) + "/" + str(mempoolKBytes) + "K\t" + VL)
+print(VL + " - CONNECTIONS -------------------------------------------------------- " + VL)
+print(VL + " P2P        : " + p2p + "\tCold Peers : " + str(peersCold) + "\tUni-Dir    : " + str(unidirectionalConns) + "\t" + VL)
+print(VL + " Incoming   : " + str(incomingConns) + "\tWarm Peers : " + str(peersWarm) + "\t Bi-Dir     :" + str(duplexConns) + "\t" + VL)
+print(VL + " Outgoing   : " + str(outgoingConns) + "\tHot Peers  : " + str(peersHot) + "\tDuplex    : " + str(prunableConns) + "\t" + VL)
+print(VL + " - BLOCK PROPAGATION -------------------------------------------------- " + VL)
+
