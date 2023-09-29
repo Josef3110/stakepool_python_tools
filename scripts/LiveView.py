@@ -12,15 +12,15 @@ import json
 import time
 from datetime import datetime
 
-VERSION = "0.4"
+VERSION = "0.5"
 NODE_NAME = "Cardano Node" 
-REFRESH_RATE = 3
+REFRESH_RATE = 2
 
 # define some default values upfront
 
 METRICS_URL = "http://localhost:12788"
 HEADERS = {'Accept': 'application/json'}
-WIDTH = 72
+WIDTH = 74
 MARKED = "\u258C"
 UNMARKED = "\u2596"
 VL = "\u2502"
@@ -61,10 +61,10 @@ class bcolors:
         STANDOUT = '\033[7m'
         BOLD = '\033[1m'
         NC = '\033[0m'    
-    
 
-#print(LVL + VL + RVL)
-#print(UHL + HL + DHL)
+# global variables for exit, help, etc.    
+currentMode = "h"       # 'h' ... home, 'q' ... quit, 'i' ... info, 'p' ... peers
+
 
 def get_node_version(debug):
     command = ["cardano-node", "version"]        
@@ -101,20 +101,20 @@ def requestmetric(url):
     finally:
         metrics = response.json()
         return metrics;
-
+        
 # main
 
 topLine = DR
 for i in range(0,WIDTH-2):
-        if i == 33:
+        if i == 35:
                 topLine = topLine + DHL
         else:
-                if i == 46:
+                if i == 48:
                         topLine = topLine + DHL
                 else:                        
                         topLine = topLine + HL
 topLine = topLine + DL
-line2 = VL + " ------------------------------- " + UR
+line2 = VL + " --------------------------------- " + UR
 for i in range(0,12):
         line2 = line2 + HL
 line2 = line2 + UHL
@@ -171,21 +171,6 @@ slotLength = genesis["slotLength"]
 activeSlotsCoeff = genesis["activeSlotsCoeff"]
 
 
-#if args.config:
-#    my_config = getconfig(args.config)
-#    if 'hostname' in my_config:
-#        cnode_hostname = my_config['hostname']
-#    else:
-#        sys.exit()
-#    if 'port' in my_config:
-#        cnode_port = my_config['port']
-#    else:
-#        sys.exit()
-#    if 'networkMagic' in my_config:
-#        nwmagic = my_config['networkMagic']
-#    else:
-#        nwmagic = nwmagic_default
-
 # start cardano-node binary to get version and revision number
 nodeInfo = get_node_version(print_debug)
 nodeInfoLines = nodeInfo.splitlines()
@@ -195,57 +180,62 @@ nodeVersion = nodeInfoLine1[1]
 nodeRevision = nodeInfoLine2[2][:8]
 
 # get metrics in JSON via EKG
-metrics = requestmetric(METRICS_URL)
-#print(response.encoding)
+while True:
+        os.system('clear')
+        metrics = requestmetric(METRICS_URL)
 
-epoch = metrics["cardano"]["node"]["metrics"]["epoch"]["int"]["val"]
+        epoch = metrics["cardano"]["node"]["metrics"]["epoch"]["int"]["val"]
 
-blockNum = metrics["cardano"]["node"]["metrics"]["blockNum"]["int"]["val"]
-slotInEpoch = metrics["cardano"]["node"]["metrics"]["slotInEpoch"]["int"]["val"]
-slotNum = metrics["cardano"]["node"]["metrics"]["slotNum"]["int"]["val"]
-density = round(float(metrics["cardano"]["node"]["metrics"]["density"]["real"]["val"]),3)
-forks = metrics["cardano"]["node"]["metrics"]["forks"]["int"]["val"]
-txsProcessedNum = metrics["cardano"]["node"]["metrics"]["txsProcessedNum"]["int"]["val"]
-txsInMempool = metrics["cardano"]["node"]["metrics"]["txsInMempool"]["int"]["val"]
-mempoolKBytes = round(int(metrics["cardano"]["node"]["metrics"]["mempoolBytes"]["int"]["val"])/1024,0)
+        blockNum = metrics["cardano"]["node"]["metrics"]["blockNum"]["int"]["val"]
+        slotInEpoch = metrics["cardano"]["node"]["metrics"]["slotInEpoch"]["int"]["val"]
+        slotNum = metrics["cardano"]["node"]["metrics"]["slotNum"]["int"]["val"]
+        density = round(float(metrics["cardano"]["node"]["metrics"]["density"]["real"]["val"])*100,3)
+        forks = metrics["cardano"]["node"]["metrics"]["forks"]["int"]["val"]
+        txsProcessedNum = metrics["cardano"]["node"]["metrics"]["txsProcessedNum"]["int"]["val"]
+        txsInMempool = metrics["cardano"]["node"]["metrics"]["txsInMempool"]["int"]["val"]
+        mempoolKBytes = round(int(metrics["cardano"]["node"]["metrics"]["mempoolBytes"]["int"]["val"])/1024,0)
 
-peersCold = metrics["cardano"]["node"]["metrics"]["peerSelection"]["cold"]["val"]
-peersWarm = metrics["cardano"]["node"]["metrics"]["peerSelection"]["warm"]["val"]
-peersHot = metrics["cardano"]["node"]["metrics"]["peerSelection"]["hot"]["val"]
+        peersCold = metrics["cardano"]["node"]["metrics"]["peerSelection"]["cold"]["val"]
+        peersWarm = metrics["cardano"]["node"]["metrics"]["peerSelection"]["warm"]["val"]
+        peersHot = metrics["cardano"]["node"]["metrics"]["peerSelection"]["hot"]["val"]
 
-incomingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["incomingConns"]["val"]
-outgoingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["outgoingConns"]["val"]
-unidirectionalConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["unidirectionalConns"]["val"]
-duplexConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["duplexConns"]["val"]
-prunableConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["prunableConns"]["val"]
+        incomingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["incomingConns"]["val"]
+        outgoingConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["outgoingConns"]["val"]
+        unidirectionalConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["unidirectionalConns"]["val"]
+        duplexConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["duplexConns"]["val"]
+        prunableConns = metrics["cardano"]["node"]["metrics"]["connectionManager"]["prunableConns"]["val"]
 
-epochProgress = round(slotInEpoch/epochLength * 100,2)
+        lastDelay = round(float(metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["blockdelay"]["s"]["val"]),2)
+        served = metrics["cardano"]["node"]["metrics"]["served"]["block"]["count"]["int"]["val"]
+        late = metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["lateblocks"]["val"]
+        cdfOne = round(float(metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["blockdelay"]["cdfOne"]["val"]),2)
+        cdfThree = round(float(metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["blockdelay"]["cdfThree"]["val"]),2)
+        cdfFive = round(float(metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["blockdelay"]["cdfFive"]["val"]),2)
+               
+        epochProgress = round(slotInEpoch/epochLength * 100,2)
 
-#response_list = response.text.splitlines(True)
-#metrics = {}
-#for element in response_list:
-#        metric = element.rstrip('\n').split()
-#        metrics[metric[0]] = metric[1]
+        aboutToLead = 0
+        if aboutToLead == 0:
+                nodeMode = "Relay"
+        else:
+                nodeMode = "Core"
 
-#block_number = metrics['cardano_node_metrics_blockNum_int']
-
-aboutToLead = 0
-if aboutToLead == 0:
-        nodeMode = "Relay"
-else:
-        nodeMode = "Core"
-
-print("\t> " + bcolors.FG_GREEN + NODE_NAME + bcolors.FG_BLACK + " - " + bcolors.FG_YELLOW +  "(" + nodeMode + " - " + networkId + ")" + bcolors.FG_BLACK + " : " + bcolors.FG_BLUE + nodeVersion + bcolors.FG_BLACK + " [" + bcolors.FG_BLUE + nodeRevision + bcolors.FG_BLACK + "] <")
-print(topLine)
-print(VL + " Uptime: " + "\t\t\t  " + VL + " Port: " + bcolors.FG_GREEN + nodePort + bcolors.FG_BLACK + " " + VL + bcolors.FG_MAGENTA + " ADAAT " + myname + " " + VERSION + " " + bcolors.FG_BLACK + VL)
-print(line2)
-print(VL + " Epoch " + str(epoch) + " [" + str(epochProgress) +"%], " + " remaining " + VL) 
-print(VL + " Block      : " + str(blockNum) + "\tTip (ref)\t:" + "\tForks\t\t: " + str(forks) + " " + VL) 
-print(VL + " Slot       : " + str(slotNum) + "\tTip (diff)\t:" + "\tTotal Tx\t: " + str(txsProcessedNum) + " " + VL)
-print(VL + " Slot epoch : " + str(slotInEpoch) + "\tDensity\t: " + str(density) + "\tPending Tx : " + str(txsInMempool) + "/" + str(mempoolKBytes) + "K\t" + VL)
-print(VL + " - CONNECTIONS -------------------------------------------------------- " + VL)
-print(VL + " P2P        : " + p2p + "\tCold Peers : " + str(peersCold) + "\tUni-Dir    : " + str(unidirectionalConns) + "\t" + VL)
-print(VL + " Incoming   : " + str(incomingConns) + "\tWarm Peers : " + str(peersWarm) + "\t Bi-Dir     :" + str(duplexConns) + "\t" + VL)
-print(VL + " Outgoing   : " + str(outgoingConns) + "\tHot Peers  : " + str(peersHot) + "\tDuplex    : " + str(prunableConns) + "\t" + VL)
-print(VL + " - BLOCK PROPAGATION -------------------------------------------------- " + VL)
+        print("\t> " + bcolors.FG_GREEN + NODE_NAME + bcolors.FG_BLACK + " - " + bcolors.FG_YELLOW +  "(" + nodeMode + " - " + networkId + ")" + bcolors.FG_BLACK + " : " + bcolors.FG_BLUE + nodeVersion + bcolors.FG_BLACK + " [" + bcolors.FG_BLUE + nodeRevision + bcolors.FG_BLACK + "] <")
+        print(topLine)
+        print(VL + " Uptime: " + "\t\t\t    " + VL + " Port: " + bcolors.FG_GREEN + nodePort + bcolors.FG_BLACK + " " + VL + bcolors.FG_MAGENTA + " ADAAT " + myname + " " + VERSION + " " + bcolors.FG_BLACK + VL)
+        print(line2)
+        print(VL + " Epoch " + str(epoch) + " [" + str(epochProgress) +"%], " + " remaining " + "\t" +VL) 
+        print(VL + " Block      : " + str(blockNum) + "\t Tip (ref)\t:" + "\tForks      : " + str(forks) + "\t " + VL) 
+        print(VL + " Slot       : " + str(slotNum) + " Tip (diff)\t:" + "\tTotal Tx   : " + str(txsProcessedNum) + "\t " + VL)
+        print(VL + " Slot epoch : " + str(slotInEpoch) + "\t Density\t: " + str(density) + "\tPending Tx : " + str(txsInMempool) + "/" + str(mempoolKBytes) + "K\t " + VL)
+        print(VL + " - CONNECTIONS -------------------------------------------------------- " + VL)
+        print(VL + " P2P        : " + p2p + "\t Cold Peers : " + str(peersCold) + "\tUni-Dir    : " + str(unidirectionalConns) + "\t\t " + VL)
+        print(VL + " Incoming   : " + str(incomingConns) + "\t Warm Peers : " + str(peersWarm) + "\tBi-Dir     : " + str(duplexConns) + "\t\t " + VL)
+        print(VL + " Outgoing   : " + str(outgoingConns) + "\t Hot Peers  : " + str(peersHot) + "\tDuplex     : " + str(prunableConns) + "\t\t " + VL)
+        print(VL + " - BLOCK PROPAGATION -------------------------------------------------- " + VL)
+        print(VL + " Last Delay : " + str(lastDelay) + "s\t Served     : " + str(served) + "\tLate (>5s) : " + str(late) + "\t " + VL)
+        print(VL + " Within 1s  : " + str(cdfOne) + "%\t Within 3s  : " + str(cdfThree) + "%\tWithin 5s  : " + str(cdfFive) + "%\t " + VL)
+        print(VL + " - NODE RESOURCE USAGE ------------------------------------------------ " + VL)
+        
+        time.sleep(REFRESH_RATE)
 
