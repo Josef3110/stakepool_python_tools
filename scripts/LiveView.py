@@ -10,10 +10,12 @@ import argparse
 import requests
 import json
 import time
+import psutil
 from datetime import datetime
 
-VERSION = "0.5"
-NODE_NAME = "Cardano Node" 
+VERSION = "0.6"
+NODE_NAME = "Cardano Node"
+PROC_NAME = "cardano-node" 
 REFRESH_RATE = 2
 
 # define some default values upfront
@@ -21,6 +23,7 @@ REFRESH_RATE = 2
 METRICS_URL = "http://localhost:12788"
 HEADERS = {'Accept': 'application/json'}
 WIDTH = 74
+GRANULARITY = WIDTH - 4
 MARKED = "\u258C"
 UNMARKED = "\u2596"
 VL = "\u2502"
@@ -80,6 +83,34 @@ def get_node_version(debug):
 
 def timestamp4log():
     return datetime.now().strftime("%d.%m.%Y %H:%M:%S");
+    
+def time_left(seconds):
+        days = int(round(seconds/60/60/24,0))
+        hours = int(round(seconds/60/60%24,0))
+        minutes = int(round(seconds/60%60,0))
+        if days > 0:
+                daysstr = str(days) + "d "
+        else:
+                daysstr = ""
+        if hours < 10:
+                hoursstr = "0" + str(hours)
+        else:
+                hoursstr = str(hours)
+        if minutes < 10:
+                minutesstr = "0" + str(minutes)
+        else:
+                minutesstr = str(minutes)
+        if int(round(seconds%60,0)) < 10:
+                secondesstr = "0" + str(int(round(seconds%60,0)))
+        else:
+                secondesstr = str(int(round(seconds%60,0)))
+        return daysstr + hoursstr + ":" + minutesstr + ":" + secondesstr
+
+def get_uptime(procname):
+        for proc in psutil.process_iter():
+                if proc.name() == procname:
+                        etime = time.time() - proc.create_time()
+        return etime
 
 def get_parameter(sourceFile):
     with open(sourceFile) as f:
@@ -114,13 +145,21 @@ for i in range(0,WIDTH-2):
                 else:                        
                         topLine = topLine + HL
 topLine = topLine + DL
+emptyLine = VL
+for i in range(0,WIDTH-2):
+        emptyLine = emptyLine + " "
+emptyLine = emptyLine + VL
 line2 = VL + " --------------------------------- " + UR
 for i in range(0,12):
         line2 = line2 + HL
 line2 = line2 + UHL
 for i in range(0,23):
         line2 = line2 + HL
-line2 = line2 + UL
+line2 = line2 + LVL
+lastLine = UR
+for i in range(0,WIDTH-2):
+        lastLine = lastLine + HL
+lastLine = lastLine + UL
         
 #ec = {}
 #sys.excepthook = exception_handler
@@ -156,7 +195,7 @@ else:
         sys.exit()
 
 genesisFile = parameter["ShelleyGenesisFile"]
-if parameter["EnableP2P"] == "true":
+if bool(parameter["EnableP2P"]):
         p2p = "enabled"
 else:
         p2p = "disabled"
@@ -213,7 +252,15 @@ while True:
         cdfFive = round(float(metrics["cardano"]["node"]["metrics"]["blockfetchclient"]["blockdelay"]["cdfFive"]["val"]),2)
                
         epochProgress = round(slotInEpoch/epochLength * 100,2)
-
+        epochItems = epochProgress * GRANULARITY/100
+        epochBar = bcolors.FG_BLUE
+        epochBarColor = epochBar
+        for i in range(0,GRANULARITY):
+                if i < epochItems:
+                        epochBar = epochBar + MARKED
+                else:
+                        epochBar = epochBar + bcolors.FG_BLACK + UNMARKED
+                        
         aboutToLead = 0
         if aboutToLead == 0:
                 nodeMode = "Relay"
@@ -222,20 +269,25 @@ while True:
 
         print("\t> " + bcolors.FG_GREEN + NODE_NAME + bcolors.FG_BLACK + " - " + bcolors.FG_YELLOW +  "(" + nodeMode + " - " + networkId + ")" + bcolors.FG_BLACK + " : " + bcolors.FG_BLUE + nodeVersion + bcolors.FG_BLACK + " [" + bcolors.FG_BLUE + nodeRevision + bcolors.FG_BLACK + "] <")
         print(topLine)
-        print(VL + " Uptime: " + "\t\t\t    " + VL + " Port: " + bcolors.FG_GREEN + nodePort + bcolors.FG_BLACK + " " + VL + bcolors.FG_MAGENTA + " ADAAT " + myname + " " + VERSION + " " + bcolors.FG_BLACK + VL)
+        print(VL + " Uptime: " + bcolors.FG_BLUE  + time_left(get_uptime(PROC_NAME)) + bcolors.FG_BLACK + "\t\t    " + VL + " Port: " + bcolors.FG_GREEN + nodePort + bcolors.FG_BLACK + " " + VL + bcolors.FG_MAGENTA + " ADAAT " + myname + " " + VERSION + " " + bcolors.FG_BLACK + VL)
         print(line2)
-        print(VL + " Epoch " + str(epoch) + " [" + str(epochProgress) +"%], " + " remaining " + "\t" +VL) 
-        print(VL + " Block      : " + str(blockNum) + "\t Tip (ref)\t:" + "\tForks      : " + str(forks) + "\t " + VL) 
-        print(VL + " Slot       : " + str(slotNum) + " Tip (diff)\t:" + "\tTotal Tx   : " + str(txsProcessedNum) + "\t " + VL)
-        print(VL + " Slot epoch : " + str(slotInEpoch) + "\t Density\t: " + str(density) + "\tPending Tx : " + str(txsInMempool) + "/" + str(mempoolKBytes) + "K\t " + VL)
+        print(VL + " Epoch " + bcolors.FG_BLUE + str(epoch) + bcolors.FG_BLACK + " [" + bcolors.FG_BLUE + str(epochProgress) +"%" + bcolors.FG_BLACK + "], " + " remaining " + "\t" + VL)
+        print(VL + " " +  epochBar + bcolors.FG_BLACK + " " + VL)
+        print(emptyLine)        
+        print(VL + " Block      : " + bcolors.FG_BLUE + str(blockNum) + bcolors.FG_BLACK + "\t Tip (ref)\t:" + "\tForks      : " + bcolors.FG_BLUE + str(forks) + bcolors.FG_BLACK + "\t " + VL) 
+        print(VL + " Slot       : " + bcolors.FG_BLUE + str(slotNum) + bcolors.FG_BLACK + " Tip (diff)\t:" + "\tTotal Tx   : " + bcolors.FG_BLUE + str(txsProcessedNum) + bcolors.FG_BLACK + "\t " + VL)
+        print(VL + " Slot epoch : " + bcolors.FG_BLUE + str(slotInEpoch) + bcolors.FG_BLACK + "\t Density\t: " + bcolors.FG_BLUE + str(density) + bcolors.FG_BLACK + "\tPending Tx : " + bcolors.FG_BLUE + str(txsInMempool) + bcolors.FG_BLACK + "/" + bcolors.FG_BLUE + str(mempoolKBytes) + bcolors.FG_BLACK + "K\t " + VL)
         print(VL + " - CONNECTIONS -------------------------------------------------------- " + VL)
-        print(VL + " P2P        : " + p2p + "\t Cold Peers : " + str(peersCold) + "\tUni-Dir    : " + str(unidirectionalConns) + "\t\t " + VL)
-        print(VL + " Incoming   : " + str(incomingConns) + "\t Warm Peers : " + str(peersWarm) + "\tBi-Dir     : " + str(duplexConns) + "\t\t " + VL)
-        print(VL + " Outgoing   : " + str(outgoingConns) + "\t Hot Peers  : " + str(peersHot) + "\tDuplex     : " + str(prunableConns) + "\t\t " + VL)
+        print(VL + " P2P        : " + bcolors.FG_YELLOW + p2p + bcolors.FG_BLACK + "\t Cold Peers : " + bcolors.FG_BLUE + str(peersCold) + bcolors.FG_BLACK + "\tUni-Dir    : " + bcolors.FG_BLUE + str(unidirectionalConns) + bcolors.FG_BLACK + "\t\t " + VL)
+        print(VL + " Incoming   : " + bcolors.FG_BLUE + str(incomingConns) + bcolors.FG_BLACK + "\t Warm Peers : " + bcolors.FG_BLUE + str(peersWarm) + bcolors.FG_BLACK + "\tBi-Dir     : " + bcolors.FG_BLUE + str(duplexConns) + bcolors.FG_BLACK + "\t\t " + VL)
+        print(VL + " Outgoing   : " + bcolors.FG_BLUE + str(outgoingConns) + bcolors.FG_BLACK + "\t Hot Peers  : " + bcolors.FG_BLUE + str(peersHot) + bcolors.FG_BLACK + "\tDuplex     : " + bcolors.FG_BLUE + str(prunableConns) + bcolors.FG_BLACK + "\t\t " + VL)
         print(VL + " - BLOCK PROPAGATION -------------------------------------------------- " + VL)
-        print(VL + " Last Delay : " + str(lastDelay) + "s\t Served     : " + str(served) + "\tLate (>5s) : " + str(late) + "\t " + VL)
-        print(VL + " Within 1s  : " + str(cdfOne) + "%\t Within 3s  : " + str(cdfThree) + "%\tWithin 5s  : " + str(cdfFive) + "%\t " + VL)
+        print(VL + " Last Delay : " + bcolors.FG_BLUE + str(lastDelay) + bcolors.FG_BLACK + "s\t Served     : " + bcolors.FG_BLUE + str(served) + bcolors.FG_BLACK + "\tLate (>5s) : " + bcolors.FG_BLUE + str(late) + bcolors.FG_BLACK + "\t " + VL)
+        print(VL + " Within 1s  : " + bcolors.FG_BLUE + str(cdfOne) + bcolors.FG_BLACK + "%\t Within 3s  : " + bcolors.FG_BLUE + str(cdfThree) + bcolors.FG_BLACK + "%\tWithin 5s  : " + bcolors.FG_BLUE + str(cdfFive) + bcolors.FG_BLACK + "%\t " + VL)
         print(VL + " - NODE RESOURCE USAGE ------------------------------------------------ " + VL)
+        print(VL + " CPU (sys)  : " + "\t Mem (Live) : " + "\t GC Minor   : " + "\t " + VL)
+        print(VL + " Mem (RSS)  : " + "\t Mem (Heap) : " + "\t GC Major   : " + "\t " + VL)
+        print(lastLine)
         
         time.sleep(REFRESH_RATE)
 
